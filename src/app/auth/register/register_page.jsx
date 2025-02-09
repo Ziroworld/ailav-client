@@ -1,11 +1,10 @@
 // RegisterPage Component
 import React from "react";
-import RegisterSection from "../../../components/sections/auth/register/register_section";
+import RegisterSection from "../../../components/customer/auth/register/register_section";
 
 function RegisterPage() {
   return (
-    <section className="min-w-screen w-full min-h-screen flex items-center justify-center">
-      
+    <section className="min-h-screen flex items-center justify-center py-16 bg-white">
       <RegisterSection />
     </section>
   );

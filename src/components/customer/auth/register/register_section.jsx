@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AuthController } from '../../../../controller/authcontroller.js';
+import { AuthServer } from '../../../../server/authserver.js';
 
 const RegisterSection = () => {
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     username: '',
     email: '',
-    phoneNumber: '',
+    phone: '',
     age: '',
     password: '',
     confirmPassword: ''
@@ -32,50 +32,87 @@ const RegisterSection = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+    validateName(newErrors);
+    validateUsername(newErrors);
+    validateEmail(newErrors);
+    validatePhone(newErrors);
+    validateAge(newErrors);
+    validatePassword(newErrors);
+    validateConfirmPassword(newErrors);
+
+    return newErrors;
+  };
+
+  const validateName = (newErrors) => {
+    if (!formData.name.trim()) newErrors.name = 'Full name is required';
+  };
+
+  const validateUsername = (newErrors) => {
     if (!formData.username.trim()) newErrors.username = 'Username is required';
+  };
+
+  const validateEmail = (newErrors) => {
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+  };
+
+  const validatePhone = (newErrors) => {
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+  };
+
+  const validateAge = (newErrors) => {
     if (!formData.age) {
       newErrors.age = 'Age is required';
     } else if (parseInt(formData.age) < 0) {
       newErrors.age = 'Age cannot be negative';
     }
+  };
+
+  const validatePassword = (newErrors) => {
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
+  };
+
+  const validateConfirmPassword = (newErrors) => {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-
-    return newErrors;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+  
     const newErrors = validateForm();
-
+    
     if (Object.keys(newErrors).length === 0) {
-      const response = await AuthController.register(formData);
+  
+      const response = await AuthServer.register(formData);
+  
       if (response.success) {
-        console.log('Registration successful');
-        // TODO: Handle successful registration
+        // Store token in localStorage
+        localStorage.setItem("authToken", response.token);
+        console.log("JWT Token:", response.token);
+  
+        alert("Registration successful! Redirecting...");
+        window.location.href = "/homepage"; 
       } else {
+        console.log("Registration failed", response.error); 
         setErrors({ submit: response.error });
       }
     } else {
+      console.log("Validation failed", newErrors);
       setErrors(newErrors);
     }
   };
-
+  
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4 overflow-auto">
+    <div className="min-h-screen flex items-center justify-center py-16 bg-white">
       <div className="card w-96 bg-white shadow-xl border border-black">
         <div className="card-body relative">
           <div className="absolute top-2 right-2">
@@ -94,13 +131,13 @@ const RegisterSection = () => {
               </label>
               <input
                 type="text"
-                name="fullName"
-                value={formData.fullName}
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 placeholder="John Doe"
                 className="input input-bordered bg-white text-black border-black"
               />
-              {errors.fullName && <span className="text-red-500 text-sm mt-1">{errors.fullName}</span>}
+              {errors.name && <span className="text-red-500 text-sm mt-1">{errors.name}</span>}
             </div>
 
             <div className="form-control">
@@ -139,13 +176,13 @@ const RegisterSection = () => {
               </label>
               <input
                 type="tel"
-                name="phoneNumber"
-                value={formData.phoneNumber}
+                name="phone"
+                value={formData.phone}
                 onChange={handleChange}
                 placeholder="+1 (555) 000-0000"
                 className="input input-bordered bg-white text-black border-black"
               />
-              {errors.phoneNumber && <span className="text-red-500 text-sm mt-1">{errors.phoneNumber}</span>}
+              {errors.phone && <span className="text-red-500 text-sm mt-1">{errors.phone}</span>}
             </div>
 
             <div className="form-control">

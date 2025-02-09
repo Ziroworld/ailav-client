@@ -147,3 +147,45 @@
 // };
 
 // export default HomeSection;
+
+import React from 'react';
+
+const HomeSection = () => {
+  return (
+    <div className="navbar bg-base-100">
+      <div className="flex-1">
+        <a className="btn btn-ghost normal-case text-xl">AILAV</a>
+      </div>
+      <div className="flex-none">
+        <ul className="menu menu-horizontal p-0">
+          <li><a>Category</a></li>
+          <li><a>About us</a></li>
+          <li><a>Contact us</a></li>
+        </ul>
+      </div>
+      <div className="flex-none">
+        <div className="dropdown dropdown-end">
+          <label tabIndex="0" className="btn btn-ghost btn-circle avatar">
+            <div className="w-10 rounded-full">
+              <img src="https://placeimg.com/80/80/people" alt="User avatar" />
+            </div>
+          </label>
+          <ul tabIndex="0" className="mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
+            <li>
+              <a className="justify-between">
+                Profile
+                <span className="badge">New</span>
+              </a>
+            </li>
+            <li><a>Settings</a></li>
+            <li><a>Logout</a></li>
+          </ul>
+        </div>
+        <button className="btn btn-primary">Sign in</button>
+        <button className="btn btn-secondary">Join now</button>
+      </div>
+    </div>
+  );
+}
+
+export default HomeSection;

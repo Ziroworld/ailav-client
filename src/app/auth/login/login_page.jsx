@@ -1,5 +1,5 @@
 import React from "react";
-import LoginSection from "../../../components/sections/auth/login/login_section";
+import LoginSection from "../../../components/customer/auth/login/login_section";
 
 function LoginPage() {
   return (
