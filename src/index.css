@@ -16,3 +16,19 @@
   font-family: 'Poppins-Bold';
   src: url('./assets/fonts/Poppins-Bold.ttf') format('truetype');
 }
+
+/* (Optional) You can add base layer or global styles here */
+@layer base {
+  /* For example, set your default app font to Poppins */
+  html, body {
+    font-family: 'Poppins-Regular', sans-serif;
+  }
+
+  [data-theme="fantasy"] {
+    /* Example: custom color override or variable if needed */
+  }
+
+  [data-theme="black"] {
+
+  }
+}

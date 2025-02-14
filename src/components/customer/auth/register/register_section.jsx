@@ -239,7 +239,7 @@ const RegisterSection = () => {
           </form>
           
           <div className="text-center mt-4">
-            <text>Already a user? </text>
+            <span>Already a user? </span>
             <Link to="/auth/login" className="text-black hover:underline">
               Login
             </Link>

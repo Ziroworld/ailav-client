@@ -21,6 +21,9 @@ export class AuthServer {
       return { success: false, error: error.message };
     }
   }
+  // hooks => useMemo, useState, useEffect useRef, so on....
+  
+
     static async login(credentials) {
       try {
         const response = await fetch("http://localhost:8080/api/V3/auth/login", {

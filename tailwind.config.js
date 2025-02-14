@@ -7,10 +7,13 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-          poppins: ["Poppins-Regular", "Poppins-Medium", "Poppins-Bold"],
+          poppins: ["Poppins-Regular", "sans-serif"],
         },
     },
   },
   plugins: [require("daisyui")],
+  daisyui: {
+    themes: ["fantasy", "black"],
+  },
 }
 
