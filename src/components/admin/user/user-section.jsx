@@ -11,7 +11,7 @@ const UserSection = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Safely filter based on the keys returned from your backend.
+  // Filter data based on searchTerm safely.
   const filteredUsers = users.filter(user =>
     Object.values(user)
       .filter(val => val !== null && val !== undefined)
@@ -44,6 +44,36 @@ const UserSection = () => {
     setSelectedUser(null);
   };
 
+  // Export function: Generates a CSV file and triggers a download.
+  const handleExport = () => {
+    // Define CSV header.
+    const header = ['Name', 'Email', 'Phone', 'Role', 'Username', 'Created At'];
+    // Map filtered users to CSV rows.
+    const rows = filteredUsers.map(user => [
+      user.name,
+      user.email,
+      user.phone,
+      user.role,
+      user.username,
+      new Date(user.createdAt).toLocaleDateString()
+    ]);
+    // Combine header and rows into a CSV string.
+    const csvContent = [header, ...rows]
+      .map(row => row.map(item => `"${String(item).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    // Create a Blob from the CSV string.
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    // Create a temporary link element, trigger the download, and remove it.
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "users_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) return <div>Loading users...</div>;
   if (error) return <div>Error loading users: {error.message}</div>;
 
@@ -56,7 +86,10 @@ const UserSection = () => {
           <p className="text-sm opacity-70">Manage and monitor user accounts</p>
         </div>
         <div className="flex gap-2">
-          <button className="btn bg-black text-white hover:bg-gray-800 w-full md:w-auto">
+          <button 
+            className="btn bg-black text-white hover:bg-gray-800 w-full md:w-auto"
+            onClick={handleExport}
+          >
             <Upload size={20} />
             Export
           </button>
@@ -105,7 +138,10 @@ const UserSection = () => {
                 <td className="hidden lg:table-cell">{user.username}</td>
                 <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                 <td>
-                  <button className="btn btn-ghost btn-sm text-error" onClick={() => handleDelete(user)}>
+                  <button 
+                    className="btn btn-ghost btn-sm text-error" 
+                    onClick={() => handleDelete(user)}
+                  >
                     <Trash2 size={16} />
                   </button>
                 </td>

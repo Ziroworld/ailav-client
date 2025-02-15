@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+
+//-------------API FOR USERS DASHBOARD----------------//
 const USER_API_BASE_URL = 'http://localhost:8080/api/V3/users';
 
 
@@ -28,3 +30,7 @@ export const deleteUser = async (userId) => {
     throw error;
   }
 };
+
+//-----------------------API FOR PRODUCT DASHBOARD--------------------//
+
+const PRODUCT_API_BASE_URL = 'http://localhost:8080/api/V3/product';
