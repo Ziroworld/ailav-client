@@ -7,22 +7,22 @@ import {
   ChevronRight,
   X
 } from 'lucide-react';
+import { createProduct, createCategory } from '../../../server/admin-api.jsx'; // Product API functions
+import { uploadImage } from '../../../cloudinary/CloudinaryUploadWidget.jsx'; // Use the Cloudinary uploader function
+import useProduct from '../../../hooks/useProduct.jsx'; // Hook for products
+import useCategory from '../../../hooks/useCategory.jsx'; // Hook for categories
 
 const ProductSection = () => {
-  // State for search and pagination
+  const { products, setProducts, loading, error } = useProduct();
+  const { categories, setCategories, loadingCat, errorCat } = useCategory();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
 
   // Category modal state
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [categoryAction, setCategoryAction] = useState('add'); // 'add', 'update', 'delete'
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [categoryAction, setCategoryAction] = useState('add'); // only "add" implemented for now
   const [newCategoryName, setNewCategoryName] = useState('');
-
-  // API-fetched data for categories and products
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
 
   // Controlled form state for new product
   const [newProduct, setNewProduct] = useState({
@@ -36,58 +36,38 @@ const ProductSection = () => {
     imageUrl: ''
   });
 
-  // Fetch products and categories from API on mount
-  useEffect(() => {
-    // Replace with your actual API calls:
-    // fetchProducts().then(data => setProducts(data));
-    // fetchCategories().then(data => setCategories(data));
-
-    // For now, initialize as empty arrays
-    setProducts([]);
-    setCategories([]);
-  }, []);
-
-  // Handler for category actions (add/update/delete)
-  const handleCategoryAction = () => {
-    if (categoryAction === 'add') {
-      const newCat = { id: Date.now().toString(), name: newCategoryName };
-      setCategories([...categories, newCat]);
-    } else if (categoryAction === 'update' && selectedCategory) {
-      setCategories(
-        categories.map((cat) =>
-          cat.id === selectedCategory.id ? { ...cat, name: newCategoryName } : cat
-        )
-      );
-    } else if (categoryAction === 'delete' && selectedCategory) {
-      setCategories(categories.filter((cat) => cat.id !== selectedCategory.id));
-    }
-    setIsCategoryModalOpen(false);
-    setNewCategoryName('');
-    setSelectedCategory(null);
-  };
-
-  // Handler for product form submission
-  const handleProductSubmit = (e) => {
+  const handleProductSubmit = async (e) => {
     e.preventDefault();
-
-    // Prepare payload (convert price and inStock to numbers if needed)
+  
+    let imageUrl = newProduct.imageUrl;
+    if (newProduct.image) {
+      // Upload the image to Cloudinary and get the URL
+      imageUrl = await uploadImage(newProduct.image);
+    }
+  
+  
+    // Build the payload matching the backend's expected keys:
     const payload = {
       name: newProduct.name,
       price: Number(newProduct.price),
-      inStock: Number(newProduct.inStock),
-      categoryId: newProduct.categoryId,
-      description: newProduct.description,
+      inStock: Number(newProduct.inStock),               // Use 'stock' instead of 'inStock'
+      categoryId: newProduct.categoryId,     // Pass the category's name
+      description: newProduct.description,           // Use 'longDescription' instead of 'description'
       additionalInfo: newProduct.additionalInfo,
-      imageUrl: newProduct.imageUrl // This should be set after image upload on client side.
+      imageUrl
     };
 
-    // Call your API to create the product
-    // createProduct(payload).then(createdProduct => {
-    //   setProducts([...products, createdProduct]);
-    // });
-
-    // For now, log the payload and clear the form
-    console.log('Submitting product:', payload);
+    console.log("Payload being sent:", payload);
+  
+    try {
+      const createdProduct = await createProduct(payload);
+      setProducts([...products, createdProduct.product]);
+      console.log('Product created:', createdProduct);
+    } catch (error) {
+      console.error('Error creating product:', error);
+    }
+  
+    // Clear the form state
     setNewProduct({
       image: null,
       name: '',
@@ -98,6 +78,21 @@ const ProductSection = () => {
       additionalInfo: '',
       imageUrl: ''
     });
+  };
+  
+  // Handler for category actions (only "add" is implemented here)
+  const handleCategoryAction = async () => {
+    if (categoryAction === 'add') {
+      try {
+        const createdCategory = await createCategory({ name: newCategoryName });
+        // Refresh the categories by appending the new category
+        setCategories([...categories, createdCategory]);
+      } catch (error) {
+        console.error('Error creating category:', error);
+      }
+    }
+    setIsCategoryModalOpen(false);
+    setNewCategoryName('');
   };
 
   // Filter products by search term
@@ -112,6 +107,10 @@ const ProductSection = () => {
   const endIndex = startIndex + rowsPerPage;
   const currentProducts = filteredProducts.slice(startIndex, endIndex);
 
+  if (loading || loadingCat) return <div>Loading...</div>;
+  if (error) return <div>Error loading products: {error.message}</div>;
+  if (errorCat) return <div>Error loading categories: {errorCat.message}</div>;
+
   return (
     <div className="p-6 space-y-6">
       {/* Header Section */}
@@ -120,14 +119,10 @@ const ProductSection = () => {
           <h1 className="text-2xl font-bold">Product Management</h1>
           <p className="text-sm opacity-70">Manage your product inventory</p>
         </div>
-        {/* "Add New Product" header button removed */}
       </div>
 
       {/* Product Form */}
-      <form
-        onSubmit={handleProductSubmit}
-        className="bg-base-100 rounded-lg shadow p-6 space-y-4"
-      >
+      <form onSubmit={handleProductSubmit} className="bg-base-100 rounded-lg shadow p-6 space-y-4">
         <h2 className="text-xl font-semibold mb-4">Product Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Product Image */}
@@ -197,7 +192,7 @@ const ProductSection = () => {
               >
                 <option value="">Select category</option>
                 {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
+                  <option key={category._id || category.id} value={category._id}>
                     {category.name}
                   </option>
                 ))}
@@ -235,27 +230,18 @@ const ProductSection = () => {
             placeholder="Enter additional information"
             value={newProduct.additionalInfo}
             onChange={(e) =>
-              setNewProduct({
-                ...newProduct,
-                additionalInfo: e.target.value
-              })
+              setNewProduct({ ...newProduct, additionalInfo: e.target.value })
             }
           ></textarea>
         </div>
-        <button
-          className="btn bg-black text-white hover:bg-gray-800 w-full md:w-auto"
-          type="submit"
-        >
+        <button className="btn bg-black text-white hover:bg-gray-800 w-full md:w-auto" type="submit">
           Add New Product
         </button>
       </form>
 
-      {/* Search Section */}
+      {/* Search Section for Products */}
       <div className="flex-1 relative">
-        <Search
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-          size={20}
-        />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
         <input
           type="text"
           placeholder="Search products..."
@@ -265,56 +251,57 @@ const ProductSection = () => {
         />
       </div>
 
-      {/* Table Section */}
-      <div className="overflow-x-auto bg-base-100 rounded-lg shadow">
-        <table className="table table-zebra w-full">
-          <thead>
-            <tr>
-              <th>Product Name</th>
-              <th>Price</th>
-              <th>In Stock</th>
-              <th className="hidden md:table-cell">Category</th>
-              <th className="hidden lg:table-cell">Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentProducts.length ? (
-              currentProducts.map((product) => (
-                <tr key={product.id}>
-                  <td>{product.name}</td>
-                  <td>${product.price.toFixed(2)}</td>
-                  <td>{product.inStock}</td>
-                  <td className="hidden md:table-cell">
-                    {product.category}
-                  </td>
-                  <td className="hidden lg:table-cell">
-                    {product.description.slice(0, 50)}...
-                  </td>
-                  <td>
-                    <div className="flex gap-2">
-                      <button className="btn btn-ghost btn-sm">
-                        <Edit2 size={16} />
-                      </button>
-                      <button className="btn btn-ghost btn-sm">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-center">
-                  No products available.
+      {/* Table Section for Products */}
+          <div className="overflow-x-auto bg-base-100 rounded-lg shadow">
+      <table className="table table-zebra w-full">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Price</th>
+            <th>In Stock</th>
+            <th className="hidden md:table-cell">Category</th>
+            <th className="hidden lg:table-cell">Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentProducts.length ? (
+            currentProducts.map((product) => (
+              <tr key={product._id}>
+                <td>{product.name}</td>
+                <td>${product.price.toFixed(2)}</td>
+                <td>{product.stock}</td>
+                <td className="hidden md:table-cell">
+                  {product.category}
+                </td>
+                <td className="hidden lg:table-cell">
+                  {product.longDescription ? product.longDescription.slice(0, 50) : 'No description available'}...
+                </td>
+                <td>
+                  <div className="flex gap-2">
+                    <button className="btn btn-ghost btn-sm">
+                      <Edit2 size={16} />
+                    </button>
+                    <button className="btn btn-ghost btn-sm">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={6} className="text-center">
+                No products available.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
 
-      {/* Pagination Section */}
+
+      {/* Pagination Section for Products */}
       {filteredProducts.length > 0 && (
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm">
@@ -380,7 +367,7 @@ const ProductSection = () => {
               >
                 <option value="">Select category to delete</option>
                 {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
+                  <option key={category._id || category.id} value={category._id || category.id}>
                     {category.name}
                   </option>
                 ))}
