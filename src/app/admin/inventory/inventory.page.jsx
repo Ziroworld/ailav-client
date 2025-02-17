@@ -1,4 +1,4 @@
-import InventorySection from "../../../components/admin/inventory/inventory.section";
+import InventorySection from "../../../components/admin/inventory/inventory.section.jsx";
 
 function InventoryPage () {
     return (

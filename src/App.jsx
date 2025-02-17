@@ -9,6 +9,7 @@ import InventoryPage from "./app/admin/inventory/inventory.page";
 import ProductPage from "./app/admin/product/product.page";
 import OrderPage from "./app/admin/order/order.page";
 import UserPage from "./app/admin/user/user.page";
+import SingleProduct from "./app/admin/product/single-product.jsx"; 
 
 import { UserProvider, UserContext } from "./context/userContext.jsx";
 
@@ -47,6 +48,8 @@ function App() {
               <Route path="orders" element={<OrderPage />} />
               <Route path="users" element={<UserPage />} />
             </Route>
+            {/* New single product page route */}
+            <Route path="product/single-product/:id" element={<SingleProduct />} />
           </Route>
         </Routes>
       </UserProvider>
