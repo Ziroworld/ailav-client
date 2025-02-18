@@ -9,10 +9,9 @@ const LoginSection = () => {
     username: "",
     password: "",
   });
-
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
-  const { setUser } = useContext(UserContext); // ✅ Get setUser from context
+  const { setUser } = useContext(UserContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -42,19 +41,13 @@ const LoginSection = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-
     if (Object.keys(newErrors).length === 0) {
       const response = await AuthServer.login(credentials);
-
       if (response.success) {
         console.log("Login successful", response);
-
-        // ✅ Store user data in context & localStorage
         localStorage.setItem("authToken", response.token);
         localStorage.setItem("userRole", response.role);
         setUser({ username: response.username, role: response.role });
-
-        // ✅ Redirect AFTER setting user
         if (response.role === "admin") {
           navigate("/admin/dashboard");
         } else {
@@ -69,53 +62,69 @@ const LoginSection = () => {
   };
 
   return (
-    <div className="">
-      <div className="card w-96 bg-white shadow-xl border border-black">
-        <div className="card-body relative">
-          <h2 className="card-title text-black mb-4">Login</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-black">Username</span>
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={credentials.username}
-                onChange={handleChange}
-                placeholder="Enter your username"
-                className="input input-bordered bg-white text-black border-black"
-              />
-              {errors.username && <span className="text-red-500 text-sm mt-1">{errors.username}</span>}
-            </div>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="bg-white">
+      <div className="container mx-auto px-4 py-4">
+          {/* Adjust margin to push "AILAV" further left on larger screens */}
+          <Link to="/homepage" className="text-xl font-bold text-black md:ml-[-150px]">
+            AILAV
+          </Link>
+        </div>
+      </nav>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-black">Password</span>
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={credentials.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="input input-bordered bg-white text-black border-black"
-              />
-              {errors.password && <span className="text-red-500 text-sm mt-1">{errors.password}</span>}
-            </div>
+      <div className="flex items-center justify-center py-16">
+        <div className="card w-96 bg-white shadow-xl border border-black">
+          <div className="card-body relative">
+            <h2 className="card-title text-black mb-4">Login</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-black">Username</span>
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={credentials.username}
+                  onChange={handleChange}
+                  placeholder="Enter your username"
+                  className="input input-bordered bg-white text-black border-black"
+                />
+                {errors.username && (
+                  <span className="text-red-500 text-sm mt-1">{errors.username}</span>
+                )}
+              </div>
 
-            <div className="form-control mt-6">
-              <button type="submit" className="btn bg-black text-white hover:bg-gray-800">
-                Login
-              </button>
-            </div>
-          </form>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text text-black">Password</span>
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={credentials.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className="input input-bordered bg-white text-black border-black"
+                />
+                {errors.password && (
+                  <span className="text-red-500 text-sm mt-1">{errors.password}</span>
+                )}
+              </div>
 
-          <div className="text-center mt-4">
-            <span>Not a user? </span>
-            <Link to="/auth/register" className="text-black hover:underline">
-              Register
-            </Link>
+              <div className="form-control mt-6">
+                <button type="submit" className="btn bg-black text-white hover:bg-gray-800">
+                  Login
+                </button>
+              </div>
+            </form>
+
+            <div className="text-center mt-4">
+              <span>Not a user? </span>
+              <Link to="/auth/register" className="text-black hover:underline">
+                Register
+              </Link>
+            </div>
           </div>
         </div>
       </div>
