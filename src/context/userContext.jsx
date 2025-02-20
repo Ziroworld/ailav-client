@@ -3,9 +3,13 @@ import React, { createContext, useState, useEffect } from "react";
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
+  // Check for authToken, and try to also read the userName from localStorage
   const [user, setUser] = useState(() => {
     return localStorage.getItem("authToken")
-      ? { role: localStorage.getItem("userRole") }
+      ? { 
+          role: localStorage.getItem("userRole"),
+          name: localStorage.getItem("userName") || null
+        }
       : null;
   });
 
@@ -14,7 +18,6 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("authToken");
-
       if (!token) {
         setLoading(false);
         return;
@@ -31,17 +34,21 @@ export const UserProvider = ({ children }) => {
 
         if (response.ok) {
           const userData = await response.json();
+          // Make sure your API returns a 'name' (or 'username') property.
           setUser(userData);
+          if (userData.name) {
+            localStorage.setItem("userName", userData.name);
+          }
         } else {
           localStorage.removeItem("authToken");
           localStorage.removeItem("userRole");
+          localStorage.removeItem("userName");
           setUser(null);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
         setUser(null);
       }
-
       setLoading(false);
     };
 
@@ -51,6 +58,7 @@ export const UserProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
     setUser(null);
   };
 
