@@ -60,7 +60,7 @@ const NavBar = () => {
                     onClick={toggleUserMenu}
                     className="px-6 py-2 text-sm font-medium text-white bg-black rounded-full hover:bg-gray-800"
                   >
-                    {user.name || "User"}
+                    {user.name || user.username || "User"}
                   </button>
                   {showUserMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded">

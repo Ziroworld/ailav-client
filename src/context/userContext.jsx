@@ -36,8 +36,8 @@ export const UserProvider = ({ children }) => {
           const userData = await response.json();
           // Make sure your API returns a 'name' (or 'username') property.
           setUser(userData);
-          if (userData.name) {
-            localStorage.setItem("userName", userData.name);
+          if (userData.username) {
+            localStorage.setItem("userName", userData.username);
           }
         } else {
           localStorage.removeItem("authToken");

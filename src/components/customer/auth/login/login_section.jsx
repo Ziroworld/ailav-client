@@ -47,7 +47,19 @@ const LoginSection = () => {
         console.log("Login successful", response);
         localStorage.setItem("authToken", response.token);
         localStorage.setItem("userRole", response.role);
-        setUser({ username: response.username, role: response.role });
+         // Instead of setting user from login response, fetch current user details
+      const currentUserRes = await fetch("http://localhost:8080/api/V3/auth/currentuser", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${response.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (currentUserRes.ok) {
+        const currentUser = await currentUserRes.json();
+        localStorage.setItem("userName", currentUser.username || currentUser.name);
+        setUser(currentUser);
+      }
         if (response.role === "admin") {
           navigate("/admin/dashboard");
         } else {
