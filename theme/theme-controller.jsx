@@ -34,7 +34,7 @@ export default function ThemeController() {
         {/* Toggle checkbox */}
         <input
           type="checkbox"
-          className="toggle theme-controller"
+          className="toggle toggle-primary"
           onChange={handleThemeChange}
         />
 

@@ -5,7 +5,7 @@ import AdminDashboardSection from '../../../components/admin/dashboard/dashboard
 function DashboardPage () {
     return (
         <AdminDashboardSection>
-          {/* <Outlet /> Child components render here */}
+          <Outlet /> 
         </AdminDashboardSection>
       );
 }

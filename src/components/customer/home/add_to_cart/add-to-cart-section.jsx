@@ -1,19 +1,21 @@
 import React from 'react';
 import { Minus, Plus, X } from 'lucide-react';
 import { useCart } from '../../../../hooks/useCart.jsx';
+import { useNavigate } from 'react-router-dom';
 
 const CartSection = () => {
-  // The cart data and functions are provided via the cart context.
-  // It is assumed that your CartContext (and hook) now also exposes
-  // updateItemQuantity and removeFromCart functions.
+  const navigate = useNavigate();
   const { cart, updateItemQuantity, removeFromCart } = useCart();
 
   const calculateItemTotal = (price, quantity) => price * quantity;
   const calculateGrandTotal = () =>
-    cart.items.reduce(
-      (total, item) => total + calculateItemTotal(item.price, item.quantity),
-      0
-    );
+    cart.items.reduce((total, item) => total + calculateItemTotal(item.price, item.quantity), 0);
+
+  // Handler for Proceed to Order - navigate to your order page (e.g., '/order')
+  const handleProceedToOrder = () => {
+    // Optionally: You could call OrderContext.createOrder here instead.
+    navigate('/customer/order');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -50,23 +52,17 @@ const CartSection = () => {
                           />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900">
-                            {item.productName}
-                          </h3>
+                          <h3 className="font-medium text-gray-900">{item.productName}</h3>
                         </div>
                       </div>
                       {/* Price (hidden on small screens) */}
-                      <div className="hidden md:block text-gray-900">
-                        ${item.price.toFixed(2)}
-                      </div>
+                      <div className="hidden md:block text-gray-900">${item.price.toFixed(2)}</div>
                       {/* Quantity */}
                       <div className="flex items-center">
                         <div className="flex border rounded-lg overflow-hidden">
                           <button
                             className="px-3 py-1 text-gray-700 hover:bg-gray-200"
-                            onClick={() =>
-                              updateItemQuantity(item.productId, item.quantity - 1)
-                            }
+                            onClick={() => updateItemQuantity(item.productId, item.quantity - 1)}
                           >
                             <Minus size={16} />
                           </button>
@@ -78,9 +74,7 @@ const CartSection = () => {
                           />
                           <button
                             className="px-3 py-1 text-gray-700 hover:bg-gray-200"
-                            onClick={() =>
-                              updateItemQuantity(item.productId, item.quantity + 1)
-                            }
+                            onClick={() => updateItemQuantity(item.productId, item.quantity + 1)}
                           >
                             <Plus size={16} />
                           </button>
@@ -108,21 +102,14 @@ const CartSection = () => {
           {/* Order Summary */}
           <div className="lg:w-96">
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Order Summary
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
               <div className="space-y-4">
                 {cart.items.map((item) => (
-                  <div
-                    key={item.productId}
-                    className="flex justify-between text-sm text-gray-700"
-                  >
+                  <div key={item.productId} className="flex justify-between text-sm text-gray-700">
                     <span>
                       {item.productName} (x{item.quantity})
                     </span>
-                    <span>
-                      ${calculateItemTotal(item.price, item.quantity).toFixed(2)}
-                    </span>
+                    <span>${calculateItemTotal(item.price, item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -132,7 +119,10 @@ const CartSection = () => {
                   <span>${calculateGrandTotal().toFixed(2)}</span>
                 </div>
               </div>
-              <button className="w-full mt-6 px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors">
+              <button
+                onClick={handleProceedToOrder}
+                className="w-full mt-6 px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800 transition-colors"
+              >
                 Proceed to Order
               </button>
             </div>

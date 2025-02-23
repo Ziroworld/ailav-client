@@ -15,36 +15,30 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     const userId = getUserId();
     if (userId) {
-      // Check for localStorage cart data
       const localCartStr = localStorage.getItem('cart');
       if (localCartStr) {
         const localCart = JSON.parse(localCartStr);
         if (localCart.items && localCart.items.length > 0) {
-          // Merge each local item into the backend cart
           Promise.all(
             localCart.items.map((item) =>
               addToCartApi(userId, item.productId, item.quantity)
             )
           )
             .then(() => {
-              // Clear the local storage after merging
               localStorage.removeItem('cart');
-              // Fetch the updated backend cart
               return getCartApi(userId);
             })
             .then((data) => {
               setCart({ items: data.cart || data });
             })
             .catch((error) => console.error("Error merging cart items:", error));
-          return; // Skip the next fetch until merging is done
+          return;
         }
       }
-      // No local cart data—just fetch from backend
       getCartApi(userId)
         .then((data) => setCart({ items: data.cart || data }))
         .catch((error) => console.error('Error fetching cart:', error));
     } else {
-      // For unregistered users, load cart from localStorage
       const localCart = localStorage.getItem('cart');
       if (localCart) {
         setCart(JSON.parse(localCart));
@@ -59,7 +53,6 @@ export const CartProvider = ({ children }) => {
     }
   }, [cart, user]);
 
-  // Function to add a product to the cart
   const addToCart = async (product, quantity = 1) => {
     const userId = getUserId();
     if (userId) {
@@ -70,7 +63,6 @@ export const CartProvider = ({ children }) => {
         console.error('Error adding product to cart:', error);
       }
     } else {
-      // For unregistered users, update the local cart
       const existingItem = cart.items.find(item => item.productId === product._id);
       let newCart;
       if (existingItem) {
@@ -88,7 +80,6 @@ export const CartProvider = ({ children }) => {
             {
               productId: product._id,
               productName: product.name,
-              // Use product.imageUrl (or whichever key holds the image) to ensure the image is displayed
               productImage: product.imageUrl,
               quantity,
               price: product.price,
@@ -100,7 +91,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Additional functions (removeFromCart, clearCart) can be added similarly
   const removeFromCart = async (productId) => {
     const userId = getUserId();
     if (userId) {
@@ -119,8 +109,24 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // New clearCart function to remove all items after order is placed
+  const clearCart = async () => {
+    const userId = getUserId();
+    if (userId) {
+      try {
+        const clearedCart = await clearCartApi(userId);
+        setCart({ items: clearedCart.cart || clearedCart });
+      } catch (error) {
+        console.error('Error clearing cart:', error);
+      }
+    } else {
+      setCart({ items: [] });
+      localStorage.removeItem('cart');
+    }
+  };
+
   return (
-    <CartContext.Provider value={{ cart, addToCart, removeFromCart }}>
+    <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart }}>
       {children}
     </CartContext.Provider>
   );

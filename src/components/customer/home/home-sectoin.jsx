@@ -64,7 +64,7 @@ const HomeSection = () => {
     <div className="min-h-screen bg-white">
       {/* Top Hero Section - Wine Offer */}
       {wineProduct && (
-        <Link to={`/product/${wineProduct._id}`}>
+        <Link to={`/customer/product/${wineProduct._id}`}>
           <div className="container mx-auto px-4 py-12">
             <div className="flex flex-col-reverse md:flex-row items-center gap-8">
               <div className="md:w-1/2">
@@ -120,7 +120,7 @@ const HomeSection = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {newArrivalProducts.map((product) => (
-            <Link to={`/product/${product._id}`} key={product._id}>
+            <Link to={`/customer/product/${product._id}`} key={product._id}>
               <div className="card bg-base-100 shadow-xl">
                 <figure>
                   <img
@@ -171,7 +171,7 @@ const HomeSection = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {bestSellingProducts.map((product) => (
-            <Link to={`/product/${product._id}`} key={product._id}>
+            <Link to={`/customer/product/${product._id}`} key={product._id}>
               <div className="card bg-base-100 shadow-xl">
                 <figure>
                   <img
@@ -203,7 +203,7 @@ const HomeSection = () => {
 
       {/* Bottom Hero Section - Beer Offer */}
       {beerProduct && (
-        <Link to={`/product/${beerProduct._id}`}>
+        <Link to={`/customer/product/${beerProduct._id}`}>
           <div className="container mx-auto px-4 py-12">
             <div className="flex flex-col md:flex-row items-center gap-8">
               <div className="md:w-1/2">
