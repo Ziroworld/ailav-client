@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // import useNavigate
 import {
   Home,
   Users,
@@ -15,6 +15,7 @@ import defautProfile from "../../../assets/Avatar.png";
 import ThemeController from "../../../../theme/theme-controller";
 import { UserContext } from "../../../context/userContext";
 
+// This array remains the same
 const menuItems = [
   { icon: <Home size={20} />, label: "Dashboard", route: "/admin/dashboard" },
   { icon: <Users size={20} />, label: "Users", route: "/admin/dashboard/users" },
@@ -25,6 +26,13 @@ const menuItems = [
 
 const Header = ({ isSidebarOpen, toggleSidebar, toggleModal }) => {
   const { user, logout } = useContext(UserContext);
+  const navigate = useNavigate(); // useNavigate hook to programmatically navigate
+
+  // Wrap your logout logic so that after logout, you redirect
+  const handleLogout = () => {
+    logout();          // clears localStorage + sets user to null
+    navigate("/homepage"); // then redirect to /homepage
+  };
 
   return (
     <>
@@ -56,7 +64,7 @@ const Header = ({ isSidebarOpen, toggleSidebar, toggleModal }) => {
         <div className="absolute bottom-0 w-full p-4">
           <button
             className="flex items-center gap-4 p-3 hover:bg-base-200 rounded-lg w-full"
-            onClick={logout} // ✅ Fixed Logout
+            onClick={handleLogout}  // <-- updated
           >
             <LogOut size={20} />
             {isSidebarOpen && <span>Logout</span>}
@@ -64,7 +72,7 @@ const Header = ({ isSidebarOpen, toggleSidebar, toggleModal }) => {
         </div>
       </div>
 
-      {/* Top Navbar with margin-left based on sidebar width */}
+      {/* Top Navbar */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? "ml-64" : "ml-20"}`}>
         <div className="navbar bg-base-100 shadow-md">
           <div className="flex-1">
@@ -72,13 +80,15 @@ const Header = ({ isSidebarOpen, toggleSidebar, toggleModal }) => {
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
             <div>
-              <h1 className="text-2xl font-bold">Welcome back, {user?.username || "Admin"}</h1>
-              <p className="text-sm opacity-70">
-                Manage your admin panel efficiently
-              </p>
+              <h1 className="text-2xl font-bold">
+                Welcome back, {user?.username || "Admin"}
+              </h1>
+              <p className="text-sm opacity-70">Manage your admin panel efficiently</p>
             </div>
           </div>
+
           <ThemeController />
+
           <div className="flex-none">
             <div className="dropdown dropdown-end">
               <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
@@ -91,13 +101,19 @@ const Header = ({ isSidebarOpen, toggleSidebar, toggleModal }) => {
                 className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
               >
                 <li>
-                  <button onClick={() => toggleModal("update")}>Update Profile</button>
+                  <button onClick={() => toggleModal("update")}>
+                    Update Profile
+                  </button>
                 </li>
                 <li>
-                  <button onClick={() => toggleModal("delete")}>Delete Account</button>
+                  <button onClick={() => toggleModal("delete")}>
+                    Delete Account
+                  </button>
                 </li>
                 <li>
-                  <button onClick={() => toggleModal("changePassword")}>Change Password</button>
+                  <button onClick={() => toggleModal("changePassword")}>
+                    Change Password
+                  </button>
                 </li>
               </ul>
             </div>

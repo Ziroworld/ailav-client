@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import useHome from '../../../hooks/useHome.jsx';
 import { useCart } from '../../../hooks/useCart';
 
+/** Utility to shuffle an array in-place */
 const shuffleArray = (array) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -17,44 +18,47 @@ const HomeSection = () => {
   const { homeData: products, loading, error } = useHome();
   const { addToCart } = useCart();
 
+  // Shuffle data for new arrivals & best selling
   const newArrivalRandom = useMemo(() => shuffleArray(products || []), [products]);
   const bestSellingRandom = useMemo(() => shuffleArray(products || []), [products]);
 
+  // Decide how many items to show per page
   const itemsPerPage =
-    typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 5;
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 5;
+
   const totalNewArrivalPages = Math.ceil(newArrivalRandom.length / itemsPerPage);
   const totalBestSellingPages = Math.ceil(bestSellingRandom.length / itemsPerPage);
 
+  // Track which "slide" we're on
   const [newArrivalSlide, setNewArrivalSlide] = useState(0);
   const [bestSellingSlide, setBestSellingSlide] = useState(0);
 
   if (loading) return <div>Loading products...</div>;
   if (error) return <div>Error loading products</div>;
 
-  // For hero cards, pick one wine and one beer product.
+  // Pick one Wine & one Beer product for the hero sections
   const wineProduct = products.find((p) => p.category === 'Wine');
   const beerProduct = products.find((p) => p.category === 'Beer');
 
+  // Pagination logic for New Arrivals
   const nextNewArrival = () => {
     setNewArrivalSlide((prev) => (prev + 1) % totalNewArrivalPages);
   };
-
   const prevNewArrival = () => {
     setNewArrivalSlide((prev) => (prev - 1 + totalNewArrivalPages) % totalNewArrivalPages);
   };
-
-  const nextBestSelling = () => {
-    setBestSellingSlide((prev) => (prev + 1) % totalBestSellingPages);
-  };
-
-  const prevBestSelling = () => {
-    setBestSellingSlide((prev) => (prev - 1 + totalBestSellingPages) % totalBestSellingPages);
-  };
-
   const newArrivalProducts = newArrivalRandom.slice(
     newArrivalSlide * itemsPerPage,
     (newArrivalSlide + 1) * itemsPerPage
   );
+
+  // Pagination logic for Festival Best Selling
+  const nextBestSelling = () => {
+    setBestSellingSlide((prev) => (prev + 1) % totalBestSellingPages);
+  };
+  const prevBestSelling = () => {
+    setBestSellingSlide((prev) => (prev - 1 + totalBestSellingPages) % totalBestSellingPages);
+  };
   const bestSellingProducts = bestSellingRandom.slice(
     bestSellingSlide * itemsPerPage,
     (bestSellingSlide + 1) * itemsPerPage
@@ -71,12 +75,8 @@ const HomeSection = () => {
                 <h2 className="text-xl font-bold">
                   Seasonal Wine Offer – Enjoy 15% off on select wines!
                 </h2>
-                <h1 className="text-4xl font-bold mt-2">
-                  {wineProduct.name}
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  $ {wineProduct.price}
-                </p>
+                <h1 className="text-4xl font-bold mt-2">{wineProduct.name}</h1>
+                <p className="text-sm text-gray-600 mt-1">${wineProduct.price}</p>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -118,21 +118,28 @@ const HomeSection = () => {
             </button>
           </div>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {newArrivalProducts.map((product) => (
             <Link to={`/customer/product/${product._id}`} key={product._id}>
-              <div className="card bg-base-100 shadow-xl">
-                <figure>
+              {/* UPDATED CARD DESIGN: fixed height, flex layout, consistent styling */}
+              <div className="card bg-base-100 shadow-xl h-80 hover:shadow-2xl transition-shadow flex flex-col">
+                {/* Image area */}
+                <figure className="h-1/2 overflow-hidden">
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="object-cover h-48 w-full"
+                    className="object-cover w-full h-full"
                   />
                 </figure>
-                <div className="card-body p-4">
-                  <h3 className="card-title text-lg">{product.name}</h3>
-                  <p className="text-base font-bold">$ {product.price}</p>
-                  <div className="card-actions">
+                {/* Card body */}
+                <div className="card-body p-4 flex-1 flex flex-col">
+                  <h3 className="card-title text-lg font-bold line-clamp-1">
+                    {product.name}
+                  </h3>
+                  <p className="text-base font-bold mt-1">${product.price}</p>
+                  {/* Keep "Add to cart" at the bottom */}
+                  <div className="card-actions mt-auto">
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -169,21 +176,25 @@ const HomeSection = () => {
             </button>
           </div>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           {bestSellingProducts.map((product) => (
             <Link to={`/customer/product/${product._id}`} key={product._id}>
-              <div className="card bg-base-100 shadow-xl">
-                <figure>
+              {/* Same updated card design for consistency */}
+              <div className="card bg-base-100 shadow-xl h-80 hover:shadow-2xl transition-shadow flex flex-col">
+                <figure className="h-1/2 overflow-hidden">
                   <img
                     src={product.imageUrl}
                     alt={product.name}
-                    className="object-cover h-48 w-full"
+                    className="object-cover w-full h-full"
                   />
                 </figure>
-                <div className="card-body p-4">
-                  <h3 className="card-title text-lg">{product.name}</h3>
-                  <p className="text-base font-bold">$ {product.price}</p>
-                  <div className="card-actions">
+                <div className="card-body p-4 flex-1 flex flex-col">
+                  <h3 className="card-title text-lg font-bold line-clamp-1">
+                    {product.name}
+                  </h3>
+                  <p className="text-base font-bold mt-1">${product.price}</p>
+                  <div className="card-actions mt-auto">
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -217,12 +228,8 @@ const HomeSection = () => {
                 <h2 className="text-xl font-bold">
                   Seasonal Beer Offer – Enjoy 15% off on select beers!
                 </h2>
-                <h1 className="text-4xl font-bold mt-2">
-                  {beerProduct.name}
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                  $ {beerProduct.price}
-                </p>
+                <h1 className="text-4xl font-bold mt-2">{beerProduct.name}</h1>
+                <p className="text-sm text-gray-600 mt-1">${beerProduct.price}</p>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
