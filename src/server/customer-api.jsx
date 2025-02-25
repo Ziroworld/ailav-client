@@ -1,5 +1,28 @@
 import axios from 'axios';
 
+
+//---------------API FOR USER--------------------//
+
+const USER_API_BASE_URL = 'http://localhost:8080/api/V3/users';
+
+
+export const updateUser = async (id, data) => {
+  const response = await fetch(`${USER_API_BASE_URL}/${id}`, {
+    method: 'PUT', // or PATCH if your backend expects that
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to update user');
+  }
+  
+  return await response.json();
+};
+
 //--------------------CART API --------------------//
 const CART_API_BASE_URL = 'http://localhost:8080/api/V3/cart';
 

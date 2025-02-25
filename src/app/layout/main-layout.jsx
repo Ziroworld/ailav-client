@@ -6,6 +6,7 @@ import { UserContext } from '../../context/userContext.jsx';
 import EditModal from './models/edit-model.jsx';
 import DeleteModal from './models/delete-model.jsx';
 import ChangePasswordModal from './models/change-password-model.jsx';
+import ViewOrderModel from './models/view-order-model.jsx'; // new import
 
 const NavBar = () => {
   const { user, logout } = useContext(UserContext);
@@ -14,6 +15,7 @@ const NavBar = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showViewOrderModal, setShowViewOrderModal] = useState(false); // new state
 
   const itemCount =
     cart && cart.items
@@ -91,6 +93,16 @@ const NavBar = () => {
                       >
                         Change Password
                       </button>
+                      {/* New button for View Order History */}
+                      <button
+                        onClick={() => {
+                          setShowViewOrderModal(true);
+                          setShowUserMenu(false);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                      >
+                        View Order History
+                      </button>
                       <button
                         onClick={() => {
                           logout();
@@ -127,6 +139,7 @@ const NavBar = () => {
       {showEditModal && <EditModal user={user} onClose={() => setShowEditModal(false)} />}
       {showDeleteModal && <DeleteModal onClose={() => setShowDeleteModal(false)} />}
       {showChangePasswordModal && <ChangePasswordModal onClose={() => setShowChangePasswordModal(false)} />}
+      {showViewOrderModal && <ViewOrderModel onClose={() => setShowViewOrderModal(false)} />} {/* new modal */}
     </>
   );
 };
