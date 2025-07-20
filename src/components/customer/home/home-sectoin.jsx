@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import useHome from '../../../hooks/useHome.jsx';
-import { useCart } from '../../../hooks/useCart';
+import React, { useState, useMemo } from "react";
+import useHome from "../../../hooks/useHome.jsx";
+import { useCart } from "../../../hooks/useCart";
+import ProductCarousal from "./product-carousal.jsx";
+import { motion } from "framer-motion";
 
-/** Utility to shuffle an array in-place */
 const shuffleArray = (array) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -14,257 +13,209 @@ const shuffleArray = (array) => {
   return shuffled;
 };
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 64 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", duration: 1 } },
+};
+
 const HomeSection = () => {
   const { homeData: products, loading, error } = useHome();
   const { addToCart } = useCart();
 
-  // Shuffle data for new arrivals & best selling
+  // Shuffle for randomness
   const newArrivalRandom = useMemo(() => shuffleArray(products || []), [products]);
   const bestSellingRandom = useMemo(() => shuffleArray(products || []), [products]);
 
-  // Decide how many items to show per page
-  const itemsPerPage =
-    typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 5;
-
+  // Responsive items per page
+  const itemsPerPage = typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 5;
   const totalNewArrivalPages = Math.ceil(newArrivalRandom.length / itemsPerPage);
   const totalBestSellingPages = Math.ceil(bestSellingRandom.length / itemsPerPage);
 
-  // Track which "slide" we're on
   const [newArrivalSlide, setNewArrivalSlide] = useState(0);
   const [bestSellingSlide, setBestSellingSlide] = useState(0);
 
-  if (loading) return <div>Loading products...</div>;
-  if (error) return <div>Error loading products</div>;
+  if (loading)
+    return <div className="flex items-center justify-center h-[60vh] text-2xl text-black/70">Loading products…</div>;
+  if (error)
+    return <div className="flex items-center justify-center h-[60vh] text-2xl text-red-500">Error loading products</div>;
 
-  // Pick one Wine & one Beer product for the hero sections
-  const wineProduct = products.find((p) => p.category === 'Wine');
-  const beerProduct = products.find((p) => p.category === 'Beer');
+  // Featured hero products
+  const wineProduct = products.find((p) => p.category === "Wine");
+  const beerProduct = products.find((p) => p.category === "Beer");
 
-  // Pagination logic for New Arrivals
-  const nextNewArrival = () => {
-    setNewArrivalSlide((prev) => (prev + 1) % totalNewArrivalPages);
-  };
-  const prevNewArrival = () => {
-    setNewArrivalSlide((prev) => (prev - 1 + totalNewArrivalPages) % totalNewArrivalPages);
-  };
+  // Paginate
   const newArrivalProducts = newArrivalRandom.slice(
     newArrivalSlide * itemsPerPage,
     (newArrivalSlide + 1) * itemsPerPage
   );
-
-  // Pagination logic for Festival Best Selling
-  const nextBestSelling = () => {
-    setBestSellingSlide((prev) => (prev + 1) % totalBestSellingPages);
-  };
-  const prevBestSelling = () => {
-    setBestSellingSlide((prev) => (prev - 1 + totalBestSellingPages) % totalBestSellingPages);
-  };
   const bestSellingProducts = bestSellingRandom.slice(
     bestSellingSlide * itemsPerPage,
     (bestSellingSlide + 1) * itemsPerPage
   );
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Top Hero Section - Wine Offer */}
+    <div className="min-h-screen bg-white font-sans relative">
+      {/* Visual FX background */}
+      <div className="pointer-events-none select-none absolute -z-10 left-1/2 top-0 -translate-x-1/2 w-[950px] h-[700px] blur-[130px] opacity-30 bg-gradient-to-br from-black/10 via-gray-200 to-white"></div>
+
+      {/* HERO OFFER - WINE */}
       {wineProduct && (
-        <Link to={`/customer/product/${wineProduct._id}`}>
-          <div className="container mx-auto px-4 py-12">
-            <div className="flex flex-col-reverse md:flex-row items-center gap-8">
-              <div className="md:w-1/2">
-                <h2 className="text-xl font-bold">
-                  Seasonal Wine Offer – Enjoy 15% off on select wines!
-                </h2>
-                <h1 className="text-4xl font-bold mt-2">{wineProduct.name}</h1>
-                <p className="text-sm text-gray-600 mt-1">${wineProduct.price}</p>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    addToCart(wineProduct, 1);
-                  }}
-                  className="mt-4 w-full md:w-auto px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800"
-                >
-                  Add to cart
-                </button>
-              </div>
-              <div className="md:w-1/2">
-                <img
-                  src={wineProduct.imageUrl}
-                  alt={wineProduct.name}
-                  className="w-full h-auto object-cover rounded-lg"
-                />
-              </div>
+        <motion.section
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          className="max-w-7xl mx-auto px-4 py-28 flex flex-col md:flex-row items-center justify-between min-h-[70vh] gap-10 md:gap-20"
+        >
+          <div className="flex-1 flex flex-col gap-4 md:pr-10">
+            <div className="uppercase text-lg font-bold text-black/60 tracking-wider mb-1 flex items-center">
+              <span>Seasonal Wine Offer</span>
+              <span className="mx-2 font-extrabold text-black/80">&ndash; 15% OFF</span>
             </div>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.9 } }}
+              className="text-5xl md:text-6xl font-extrabold text-black leading-tight tracking-tight mb-1"
+            >
+              {wineProduct.name}
+            </motion.h1>
+            <div className="text-xl font-bold text-black/60 mb-2">${wineProduct.price}</div>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.04 }}
+              onClick={e => { e.preventDefault(); addToCart(wineProduct, 1); }}
+              className="mt-1 w-max px-8 py-3 bg-black text-white rounded-full text-lg font-semibold shadow-lg hover:bg-gray-900 transition"
+            >
+              Add to cart
+            </motion.button>
           </div>
-        </Link>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: 0.8 } }}
+            className="flex-1 flex justify-center items-center relative"
+          >
+            <div className="absolute inset-0 scale-105 bg-white/50 blur-3xl rounded-3xl shadow-2xl opacity-70 z-0" />
+            <motion.img
+              src={wineProduct.imageUrl}
+              alt={wineProduct.name}
+              className="relative z-10 rounded-3xl aspect-[4/5] object-cover w-full max-w-[360px] shadow-[0_14px_60px_0_rgba(0,0,0,0.14)]"
+              initial={{ y: -40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1, transition: { delay: 0.15, duration: 0.7, type: "spring" } }}
+            />
+          </motion.div>
+        </motion.section>
       )}
 
-      {/* New Arrivals Section */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-extrabold">New Arrivals</h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={prevNewArrival}
-              className="p-2 rounded-full bg-black hover:bg-gray-800 text-white"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextNewArrival}
-              className="p-2 rounded-full bg-black hover:bg-gray-800 text-white"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+      {/* NEW ARRIVALS - with your own ProductCarousal */}
+      <ProductCarousal products={newArrivalProducts} title="New Arrivals" />
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {newArrivalProducts.map((product) => (
-            <Link to={`/customer/product/${product._id}`} key={product._id}>
-              {/* UPDATED CARD DESIGN: fixed height, flex layout, consistent styling */}
-              <div className="card bg-base-100 shadow-xl h-80 hover:shadow-2xl transition-shadow flex flex-col">
-                {/* Image area */}
-                <figure className="h-1/2 overflow-hidden">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="object-cover w-full h-full"
-                  />
-                </figure>
-                {/* Card body */}
-                <div className="card-body p-4 flex-1 flex flex-col">
-                  <h3 className="card-title text-lg font-bold line-clamp-1">
-                    {product.name}
-                  </h3>
-                  <p className="text-base font-bold mt-1">${product.price}</p>
-                  {/* Keep "Add to cart" at the bottom */}
-                  <div className="card-actions mt-auto">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        addToCart(product, 1);
-                      }}
-                      className="w-full px-3 py-1 bg-black text-white rounded-full hover:bg-gray-800 text-sm"
-                    >
-                      Add to cart
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* Ailav animated Description */}
+      <motion.section
+        initial={{ opacity: 0, y: 60 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1, type: "spring" }}
+        className="max-w-4xl mx-auto py-14 md:py-24 px-4"
+      >
+        <motion.div
+          className="bg-gradient-to-r from-white via-gray-50 to-gray-100 shadow-2xl rounded-3xl px-8 py-14 md:px-20 flex flex-col items-center"
+          initial={{ scale: 0.98, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1.05, type: "spring" }}
+        >
+          <h2 className="text-3xl md:text-4xl font-black text-black mb-4 tracking-tight">Ailav</h2>
+          <p className="max-w-2xl text-gray-700 md:text-lg text-center font-medium leading-relaxed">
+            Ailav is Nepal's most beautiful modern alcohol delivery experience. With a meticulously curated range of wines, beers, and spirits—delivered chilled, fast, and reliably to your door—Ailav stands for next-level service, design, and genuine delight. Whether it’s a big celebration or a quiet evening, we make every moment seamless, safe, and memorable. Discover real world curation, trusted by thousands, designed for you.
+          </p>
+        </motion.div>
+      </motion.section>
 
-      {/* Festival Best Selling Section */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-extrabold">Festival Best Selling</h2>
-          <div className="flex space-x-2">
-            <button
-              onClick={prevBestSelling}
-              className="p-2 rounded-full bg-black hover:bg-gray-800 text-white"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextBestSelling}
-              className="p-2 rounded-full bg-black hover:bg-gray-800 text-white"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
+      {/* BEST SELLING - your ProductCarousal */}
+      <ProductCarousal products={bestSellingProducts} title="Festival Best Selling" />
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {bestSellingProducts.map((product) => (
-            <Link to={`/customer/product/${product._id}`} key={product._id}>
-              {/* Same updated card design for consistency */}
-              <div className="card bg-base-100 shadow-xl h-80 hover:shadow-2xl transition-shadow flex flex-col">
-                <figure className="h-1/2 overflow-hidden">
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="object-cover w-full h-full"
-                  />
-                </figure>
-                <div className="card-body p-4 flex-1 flex flex-col">
-                  <h3 className="card-title text-lg font-bold line-clamp-1">
-                    {product.name}
-                  </h3>
-                  <p className="text-base font-bold mt-1">${product.price}</p>
-                  <div className="card-actions mt-auto">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        addToCart(product, 1);
-                      }}
-                      className="w-full px-3 py-1 bg-black text-white rounded-full hover:bg-gray-800 text-sm"
-                    >
-                      Add to cart
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom Hero Section - Beer Offer */}
+      {/* HERO OFFER - BEER */}
       {beerProduct && (
-        <Link to={`/customer/product/${beerProduct._id}`}>
-          <div className="container mx-auto px-4 py-12">
-            <div className="flex flex-col md:flex-row items-center gap-8">
-              <div className="md:w-1/2">
-                <img
-                  src={beerProduct.imageUrl}
-                  alt={beerProduct.name}
-                  className="w-full h-auto object-cover rounded-lg"
-                />
-              </div>
-              <div className="md:w-1/2">
-                <h2 className="text-xl font-bold">
-                  Seasonal Beer Offer – Enjoy 15% off on select beers!
-                </h2>
-                <h1 className="text-4xl font-bold mt-2">{beerProduct.name}</h1>
-                <p className="text-sm text-gray-600 mt-1">${beerProduct.price}</p>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    addToCart(beerProduct, 1);
-                  }}
-                  className="mt-4 w-full md:w-auto px-6 py-3 bg-black text-white rounded-full hover:bg-gray-800"
-                >
-                  Add to cart
-                </button>
-              </div>
+        <motion.section
+          variants={fadeUp}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          className="max-w-7xl mx-auto px-4 py-28 flex flex-col-reverse md:flex-row items-center justify-between min-h-[70vh] gap-10 md:gap-20"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1, transition: { duration: 0.8 } }}
+            className="flex-1 flex justify-center items-center relative"
+          >
+            <div className="absolute inset-0 scale-105 bg-white/50 blur-3xl rounded-3xl shadow-2xl opacity-70 z-0" />
+            <motion.img
+              src={beerProduct.imageUrl}
+              alt={beerProduct.name}
+              className="relative z-10 rounded-3xl aspect-[4/5] object-cover w-full max-w-[360px] shadow-[0_14px_60px_0_rgba(0,0,0,0.14)]"
+              initial={{ y: -40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1, transition: { delay: 0.18, duration: 0.7, type: "spring" } }}
+            />
+          </motion.div>
+          <div className="flex-1 flex flex-col gap-4 md:pl-10">
+            <div className="uppercase text-lg font-bold text-black/60 tracking-wider mb-1 flex items-center">
+              <span>Seasonal Beer Offer</span>
+              <span className="mx-2 font-extrabold text-black/80">&ndash; 15% OFF</span>
             </div>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0, transition: { duration: 0.9 } }}
+              className="text-5xl md:text-6xl font-extrabold text-black leading-tight tracking-tight mb-1"
+            >
+              {beerProduct.name}
+            </motion.h1>
+            <div className="text-xl font-bold text-black/60 mb-2">${beerProduct.price}</div>
+            <motion.button
+              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.04 }}
+              onClick={e => { e.preventDefault(); addToCart(beerProduct, 1); }}
+              className="mt-1 w-max px-8 py-3 bg-black text-white rounded-full text-lg font-semibold shadow-lg hover:bg-gray-900 transition"
+            >
+              Add to cart
+            </motion.button>
           </div>
-        </Link>
+        </motion.section>
       )}
 
-      {/* Newsletter Section */}
-      <div className="bg-black text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-8">
-              STAY UP TO DATE ABOUT OUR LATEST OFFERS
-            </h2>
-            <div className="flex flex-col md:flex-row gap-4">
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className="flex-1 px-6 py-3 rounded-full text-black"
-              />
-              <button className="px-8 py-3 bg-white text-black rounded-full hover:bg-gray-200 md:flex-shrink-0">
-                Subscribe to Newsletter
-              </button>
-            </div>
-          </div>
+      {/* NEWSLETTER */}
+      <motion.section
+        variants={fadeUp}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true }}
+        className="relative w-full py-28 bg-white flex flex-col items-center justify-center"
+      >
+        <div className="absolute inset-0 flex justify-center items-center pointer-events-none z-0">
+          <div className="w-[540px] h-[200px] bg-gradient-to-br from-black/5 via-gray-100 to-white/60 rounded-full blur-2xl" />
         </div>
-      </div>
+        <motion.div className="relative z-10 flex flex-col items-center justify-center w-full">
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-8 text-center tracking-tight">
+            Stay Up To Date About <span className="text-gray-400 font-light">Our Latest Offers</span>
+          </h2>
+          <form
+            className="w-full max-w-xl flex flex-col md:flex-row items-center justify-center gap-4 px-2"
+            onSubmit={e => e.preventDefault()}
+          >
+            <input
+              type="email"
+              placeholder="Enter your email address"
+              className="flex-1 px-8 py-4 rounded-full text-black text-lg font-semibold border border-gray-200 shadow focus:outline-none focus:ring-2 focus:ring-black transition bg-white"
+              required
+            />
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1.04 }}
+              className="px-10 py-4 bg-black text-white rounded-full font-bold text-lg hover:bg-gray-900 shadow-xl transition"
+              type="submit"
+            >
+              Subscribe
+            </motion.button>
+          </form>
+        </motion.div>
+      </motion.section>
     </div>
   );
 };

@@ -1,369 +1,282 @@
-import { Link } from "react-router-dom";
-import React, { useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthServer } from "../../../../server/authserver.js";
+import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useContext, useRef } from "react";
+import { AuthServer } from "../../../../server/authserver.js"; // <-- FIXED
 import { UserContext } from "../../../../context/userContext.jsx";
+import ReCAPTCHA from "react-google-recaptcha";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Step 1: Email Modal
-const EmailModal = ({ onSuccess, onClose }) => {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const response = await AuthServer.requestOtp(email);
-    setLoading(false);
-    if (response.success) {
-      alert("OTP has been sent to your email.");
-      onSuccess(email);
-    } else {
-      alert(`Error: ${response.error}`);
-    }
-  };
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-96">
-        <h2 className="text-xl font-bold mb-4">Reset Password</h2>
-        <p className="mb-4">Enter your registered email address.</p>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-2 border mb-4"
-            required
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-black text-white rounded"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded"
-              disabled={loading}
-            >
-              {loading ? "Submitting..." : "Submit"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+// Modularized modals
+import EmailModal from "./EmailModel.jsx";
+import OtpModal from "./OtpModel.jsx";
+import NewPasswordModal from "./NewPasswordModel.jsx";
 
-// Step 2: OTP Modal
-const OtpModal = ({ email, onSuccess, onClose }) => {
-  const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const response = await AuthServer.verifyOtp(email, otp);
-    setLoading(false);
-    if (response.success) {
-      alert("OTP verified successfully.");
-      // Save userId returned by API to localStorage
-      localStorage.setItem("resetUserId", response.userId);
-      onSuccess();
-    } else {
-      alert(`Error: ${response.error}`);
-    }
-  };
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-96">
-        <h2 className="text-xl font-bold mb-4">Enter OTP</h2>
-        <p className="mb-4">Please enter the OTP sent to {email}.</p>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="OTP Code"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            className="w-full p-2 border mb-4"
-            required
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-black text-white rounded"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded"
-              disabled={loading}
-            >
-              {loading ? "Verifying..." : "Verify OTP"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Step 3: New Password Modal
-const NewPasswordModal = ({ email, onClose }) => {
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      alert("Passwords do not match.");
-      return;
-    }
-    setLoading(true);
-    // Retrieve the userId saved from OTP verification
-    const userId = localStorage.getItem("resetUserId");
-    const response = await AuthServer.resetPassword(userId, newPassword, email);
-    setLoading(false);
-    if (response.success) {
-      alert("Password reset successfully. Please login with your new password.");
-      localStorage.removeItem("resetUserId");
-      onClose();
-    } else {
-      alert(`Error: ${response.error}`);
-    }
-  };
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded shadow-lg w-96">
-        <h2 className="text-xl font-bold mb-4">Set New Password</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="w-full p-2 border mb-4"
-            required
-          />
-          <input
-            type="password"
-            placeholder="Confirm New Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-2 border mb-4"
-            required
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-black text-white rounded"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-black text-white rounded"
-              disabled={loading}
-            >
-              {loading ? "Submitting..." : "Reset Password"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+const RECAPTCHA_SITE_KEY = "6LdVb4grAAAAAASHTnghKZ6WHMA9lMzZa5I8hcWk";
 
 const LoginSection = () => {
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: "",
-  });
+  const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotStep, setForgotStep] = useState("email"); // "email" | "otp" | "newPassword"
+  const [forgotStep, setForgotStep] = useState("email");
   const [resetEmail, setResetEmail] = useState("");
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [failCount, setFailCount] = useState(0);
+  const recaptchaRef = useRef();
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
 
+  // --- Validation ---
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setCredentials((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
+    setCredentials((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    if (!credentials.username.trim()) {
-      newErrors.username = "Username is required";
-    }
-    if (!credentials.password) {
-      newErrors.password = "Password is required";
-    }
+    if (!credentials.username.trim()) newErrors.username = "Username is required";
+    if (!credentials.password) newErrors.password = "Password is required";
+    if (showCaptcha && !captchaToken) newErrors.captcha = "Please complete the CAPTCHA";
     return newErrors;
   };
 
+  // --- Login Submit Handler ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-    if (Object.keys(newErrors).length === 0) {
-      const response = await AuthServer.login(credentials);
-      if (response.success) {
-        console.log("Login successful", response);
-        localStorage.setItem("authToken", response.token);
-        localStorage.setItem("userRole", response.role);
-        // Instead of setting user from login response, fetch current user details
-        const currentUserRes = await fetch("http://localhost:8080/api/V3/auth/currentuser", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${response.token}`,
-            "Content-Type": "application/json",
-          },
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      if (Object.keys(newErrors).includes("captcha")) {
+        toast.error("Please complete the CAPTCHA.");
+      }
+      return;
+    }
+
+    const payload = showCaptcha ? { ...credentials, recaptchaToken: captchaToken } : credentials;
+    const response = await AuthServer.login(payload);
+
+    if (response.success) {
+      setFailCount(0);
+      setShowCaptcha(false);
+      setCaptchaToken("");
+      if (recaptchaRef.current) recaptchaRef.current.reset();
+      toast.success("Login successful! Redirecting...");
+
+      localStorage.setItem("authToken", response.token);
+      localStorage.setItem("userRole", response.role);
+
+      // fetch current user
+      const currentUserRes = await fetch("http://localhost:8080/api/V3/auth/currentuser", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${response.token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      if (currentUserRes.ok) {
+        const currentUser = await currentUserRes.json();
+        localStorage.setItem("userName", currentUser.username || currentUser.name);
+        localStorage.setItem("userId", currentUser.id);
+        setUser(currentUser);
+      }
+      setTimeout(() => {
+        if (response.role === "admin") navigate("/admin/dashboard");
+        else navigate("/homepage");
+      }, 800);
+    } else {
+      setFailCount((prev) => {
+        const newFail = prev + 1;
+        if (newFail >= 3) setShowCaptcha(true);
+        return newFail;
+      });
+
+      if (
+        response.error &&
+        (response.error.toLowerCase().includes("captcha") ||
+         response.error.toLowerCase().includes("too many"))
+      ) {
+        setShowCaptcha(true);
+        setErrors({
+          submit: "Too many attempts. Please solve the CAPTCHA and retry.",
+          captcha: "Please complete the CAPTCHA.",
         });
-        if (currentUserRes.ok) {
-          const currentUser = await currentUserRes.json();
-          localStorage.setItem("userName", currentUser.username || currentUser.name);
-          localStorage.setItem("userId", currentUser.id);
-          setUser(currentUser);
-        }
-        if (response.role === "admin") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/homepage");
-        }
+        toast.warning("Too many attempts. Please solve the CAPTCHA.");
       } else {
         setErrors({ submit: response.error });
+        toast.error(response.error || "Login failed.");
       }
-    } else {
-      setErrors(newErrors);
+      if (recaptchaRef.current) recaptchaRef.current.reset();
+      setCaptchaToken("");
     }
   };
 
+  // --- Animations ---
+  const inputVariants = {
+    initial: { y: 30, opacity: 0 },
+    animate: (i) => ({ y: 0, opacity: 1, transition: { delay: i * 0.1 } }),
+    shake: { x: [0, -8, 8, -8, 8, 0], transition: { duration: 0.4 } },
+  };
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white">
-        <div className="container mx-auto px-4 py-4">
-          <Link to="/homepage" className="text-xl font-bold text-black md:ml-[-150px]">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-100 flex flex-col">
+      <nav className="bg-white shadow">
+        <div className="container mx-auto px-4 py-4 flex items-center">
+          <Link to="/homepage" className="text-2xl font-bold text-black tracking-tight hover:opacity-80">
             AILAV
           </Link>
         </div>
       </nav>
-
-      <div className="flex items-center justify-center py-16">
-        <div className="card w-96 bg-white shadow-xl border border-black">
-          <div className="card-body relative">
-            <h2 className="card-title text-black mb-4">Login</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-black">Username</span>
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={credentials.username}
-                  onChange={handleChange}
-                  placeholder="Enter your username"
-                  className="input input-bordered bg-white text-black border-black"
-                />
-                {errors.username && (
-                  <span className="text-red-500 text-sm mt-1">{errors.username}</span>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text text-black">Password</span>
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={credentials.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  className="input input-bordered bg-white text-black border-black"
-                />
-                {errors.password && (
-                  <span className="text-red-500 text-sm mt-1">{errors.password}</span>
-                )}
-                <div className="text-right mt-2">
+      <div className="flex flex-1 items-center justify-center py-10">
+        <motion.div
+          className="w-full max-w-md"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, type: "spring", bounce: 0.2 }}>
+          <div className="card bg-white rounded-2xl shadow-2xl border border-black/10">
+            <div className="card-body p-8 flex flex-col gap-3">
+              <motion.h2
+                className="font-bold text-3xl text-black text-center mb-3"
+                initial={{ opacity: 0, y: -16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.5 }}>
+                Welcome Back
+              </motion.h2>
+              <motion.form onSubmit={handleSubmit} className="space-y-4">
+                <motion.div variants={inputVariants} initial="initial" animate="animate" custom={0}>
+                  <label className="block mb-1 text-black font-medium">Username</label>
+                  <input
+                    type="text"
+                    name="username"
+                    autoComplete="username"
+                    value={credentials.username}
+                    onChange={handleChange}
+                    placeholder="Enter your username"
+                    className={`input input-bordered w-full ${errors.username ? "input-error" : ""}`}
+                  />
+                  {errors.username && (
+                    <motion.span
+                      className="text-red-500 text-xs mt-1"
+                      initial="initial"
+                      animate="shake"
+                      variants={inputVariants}>
+                      {errors.username}
+                    </motion.span>
+                  )}
+                </motion.div>
+                <motion.div variants={inputVariants} initial="initial" animate="animate" custom={1}>
+                  <label className="block mb-1 text-black font-medium">Password</label>
+                  <input
+                    type="password"
+                    name="password"
+                    autoComplete="current-password"
+                    value={credentials.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    className={`input input-bordered w-full ${errors.password ? "input-error" : ""}`}
+                  />
+                  {errors.password && (
+                    <motion.span
+                      className="text-red-500 text-xs mt-1"
+                      initial="initial"
+                      animate="shake"
+                      variants={inputVariants}>
+                      {errors.password}
+                    </motion.span>
+                  )}
+                  <div className="text-right mt-2">
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:underline text-xs"
+                      onClick={() => {
+                        setShowForgotPassword(true);
+                        setForgotStep("email");
+                      }}>
+                      Forgot password?
+                    </button>
+                  </div>
+                </motion.div>
+                <AnimatePresence>
+                  {showCaptcha && (
+                    <motion.div
+                      key="captcha"
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 16 }}
+                      className="my-2 flex flex-col items-center">
+                      <ReCAPTCHA
+                        sitekey={RECAPTCHA_SITE_KEY}
+                        ref={recaptchaRef}
+                        onChange={token => setCaptchaToken(token)}
+                        onExpired={() => setCaptchaToken("")}
+                      />
+                      {errors.captcha && (
+                        <motion.span
+                          className="text-xs text-red-500 mt-2"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}>
+                          {errors.captcha}
+                        </motion.span>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <motion.div className="pt-3" variants={inputVariants} initial="initial" animate="animate" custom={3}>
                   <button
-                    type="button"
-                    className="text-blue-500 hover:underline text-sm"
-                    onClick={() => {
-                      setShowForgotPassword(true);
-                      setForgotStep("email");
-                    }}
-                  >
-                    Forgot password?
+                    type="submit"
+                    className="btn btn-neutral w-full rounded-xl text-lg"
+                    disabled={showCaptcha && !captchaToken}>
+                    Login
                   </button>
-                </div>
+                  {errors.submit && (
+                    <motion.span
+                      className="text-red-500 text-xs block text-center mt-3"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}>
+                      {errors.submit}
+                    </motion.span>
+                  )}
+                </motion.div>
+              </motion.form>
+              <div className="text-center mt-6">
+                <span className="text-black">Not a user? </span>
+                <Link to="/auth/register" className="text-blue-600 font-medium hover:underline">
+                  Register
+                </Link>
               </div>
-
-              <div className="form-control mt-6">
-                <button type="submit" className="btn bg-black text-white hover:bg-gray-800">
-                  Login
-                </button>
-              </div>
-              {errors.submit && (
-                <span className="text-red-500 text-sm">{errors.submit}</span>
-              )}
-            </form>
-
-            <div className="text-center mt-4">
-              <span>Not a user? </span>
-              <Link to="/auth/register" className="text-black hover:underline">
-                Register
-              </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-
-      {/* Forgot Password Flow Modals */}
-      {showForgotPassword && forgotStep === "email" && (
-        <EmailModal
-          onClose={() => setShowForgotPassword(false)}
-          onSuccess={(email) => {
-            setResetEmail(email);
-            setForgotStep("otp");
-          }}
-        />
-      )}
-
-      {showForgotPassword && forgotStep === "otp" && (
-        <OtpModal
-          email={resetEmail}
-          onClose={() => setShowForgotPassword(false)}
-          onSuccess={() => setForgotStep("newPassword")}
-        />
-      )}
-
-      {showForgotPassword && forgotStep === "newPassword" && (
-        <NewPasswordModal
-          email={resetEmail}
-          onClose={() => {
-            setShowForgotPassword(false);
-            setForgotStep("email");
-            setResetEmail("");
-          }}
-        />
-      )}
+      {/* Forgot Password Modals */}
+      <AnimatePresence>
+        {showForgotPassword && forgotStep === "email" && (
+          <EmailModal
+            onClose={() => setShowForgotPassword(false)}
+            onSuccess={email => {
+              setResetEmail(email);
+              setForgotStep("otp");
+            }}
+          />
+        )}
+        {showForgotPassword && forgotStep === "otp" && (
+          <OtpModal
+            email={resetEmail}
+            onClose={() => setShowForgotPassword(false)}
+            onSuccess={() => setForgotStep("newPassword")}
+          />
+        )}
+        {showForgotPassword && forgotStep === "newPassword" && (
+          <NewPasswordModal
+            email={resetEmail}
+            onClose={() => {
+              setShowForgotPassword(false);
+              setForgotStep("email");
+              setResetEmail("");
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
