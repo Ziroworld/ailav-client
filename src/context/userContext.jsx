@@ -18,7 +18,7 @@ export const UserProvider = ({ children }) => {
         return;
       }
       try {
-        const response = await authFetch("http://localhost:8080/api/V3/auth/currentuser", {
+        const response = await authFetch("https://localhost:8080/api/V3/auth/currentuser", {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });

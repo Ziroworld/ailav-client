@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8080/api/V3/auth";
+const API_URL = "https://localhost:8080/api/V3/auth";
 
 export class AuthServer {
   // Registration - stays unchanged

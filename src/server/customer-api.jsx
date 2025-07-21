@@ -3,7 +3,7 @@ import axios from 'axios';
 
 //---------------API FOR USER--------------------//
 
-const USER_API_BASE_URL = 'http://localhost:8080/api/V3/users';
+const USER_API_BASE_URL = 'https://localhost:8080/api/V3/users';
 
 
 export const updateUser = async (id, data) => {
@@ -24,7 +24,7 @@ export const updateUser = async (id, data) => {
 };
 
 //--------------------CART API --------------------//
-const CART_API_BASE_URL = 'http://localhost:8080/api/V3/cart';
+const CART_API_BASE_URL = 'https://localhost:8080/api/V3/cart';
 
 export const addToCartApi = async (userId, productId, quantity) => {
   try {
@@ -68,7 +68,7 @@ export const clearCartApi = async (userId) => {
 
 //--------------------ORDER API --------------------//
 
-const ORDER_API_BASE_URL = 'http://localhost:8080/api/V3/order';
+const ORDER_API_BASE_URL = 'https://localhost:8080/api/V3/order';
 
 export const createOrderApi = async (orderData) => {
   try {

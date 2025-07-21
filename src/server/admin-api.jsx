@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 //-------------API FOR USERS DASHBOARD----------------//
-const USER_API_BASE_URL = 'http://localhost:8080/api/V3/users';
+const USER_API_BASE_URL = 'https://localhost:8080/api/V3/users';
 
 
 export const getUsers = async () => {
@@ -31,7 +31,7 @@ export const deleteUser = async (userId) => {
   }
 };
 //------------------API FOR CATEGORY----------------//
-const CATEGORY_API_BASE_URL = 'http://localhost:8080/api/V3/category';
+const CATEGORY_API_BASE_URL = 'https://localhost:8080/api/V3/category';
 
 export const createCategory = async (payload) => {
   try {
@@ -54,7 +54,7 @@ export const getCategories = async () => {
 };
 //-----------------------API FOR PRODUCT DASHBOARD--------------------//
 
-const PRODUCT_API_BASE_URL = 'http://localhost:8080/api/V3/product';
+const PRODUCT_API_BASE_URL = 'https://localhost:8080/api/V3/product';
 
 export const createProduct = async (payload) => {
   try {
