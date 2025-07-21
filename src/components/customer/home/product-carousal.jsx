@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import ProductCard from "./product-card ";
+import ProductCard from "./product-card";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 function ProductCarousel({ products = [], title, subtitle, visible = 4 }) {

@@ -1,71 +1,47 @@
+// src/context/UserContext.jsx
 import React, { createContext, useState, useEffect } from "react";
+import { authFetch } from "../server/authserver"; // no need to import AuthServer if not using backend logout
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  // If token exists, read additional properties from localStorage (including userId)
-  const [user, setUser] = useState(() => {
-    return localStorage.getItem("authToken")
-      ? { 
-          id: localStorage.getItem("userId"),
-          role: localStorage.getItem("userRole"),
-          name: localStorage.getItem("userName") || null
-        }
-      : null;
-  });
-
+  const [user, setUser] = useState(null);  // { id, role, name, ... }
   const [loading, setLoading] = useState(true);
 
+  // Try to load user info from backend using token on startup
   useEffect(() => {
-    const fetchUser = async () => {
-      const token = localStorage.getItem("authToken");
+    const loadUser = async () => {
+      const token = localStorage.getItem("accessToken");
       if (!token) {
         setLoading(false);
+        setUser(null);
         return;
       }
-
       try {
-        const response = await fetch("http://localhost:8080/api/V3/auth/currentuser", {
+        const response = await authFetch("http://localhost:8080/api/V3/auth/currentuser", {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         });
-
         if (response.ok) {
           const userData = await response.json();
-          // Save the user id as well as the name/role
           setUser(userData);
-          if (userData.username) {
-            localStorage.setItem("userName", userData.username);
-          } else if (userData.name) {
-            localStorage.setItem("userName", userData.name);
-          }
-          localStorage.setItem("userId", userData.id);
-          localStorage.setItem("userRole", userData.role);
         } else {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("userRole");
-          localStorage.removeItem("userName");
-          localStorage.removeItem("userId");
           setUser(null);
+          localStorage.removeItem("accessToken");
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
         setUser(null);
+        localStorage.removeItem("accessToken");
       }
       setLoading(false);
     };
 
-    fetchUser();
+    loadUser();
   }, []);
 
+  // --- LOGOUT: just clear token & user context, no backend call needed ---
   const logout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userId");
+    localStorage.removeItem("accessToken");
     setUser(null);
   };
 

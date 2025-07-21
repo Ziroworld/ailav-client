@@ -1,12 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useContext, useRef } from "react";
-import { AuthServer } from "../../../../server/authserver.js"; // <-- FIXED
+import { AuthServer } from "../../../../server/authserver.js";
 import { UserContext } from "../../../../context/userContext.jsx";
 import ReCAPTCHA from "react-google-recaptcha";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-// Modularized modals
 import EmailModal from "./EmailModel.jsx";
 import OtpModal from "./OtpModel.jsx";
 import NewPasswordModal from "./NewPasswordModel.jsx";
@@ -63,30 +62,32 @@ const LoginSection = () => {
       if (recaptchaRef.current) recaptchaRef.current.reset();
       toast.success("Login successful! Redirecting...");
 
-      localStorage.setItem("authToken", response.token);
-      localStorage.setItem("userRole", response.role);
+      // Only store accessToken in localStorage
+      localStorage.setItem("accessToken", response.accessToken);
 
-      // fetch current user
+      // Fetch the current user with the new accessToken
       const currentUserRes = await fetch("http://localhost:8080/api/V3/auth/currentuser", {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${response.token}`,
+          Authorization: `Bearer ${response.accessToken}`,
           "Content-Type": "application/json",
         },
       });
+
       if (currentUserRes.ok) {
         const currentUser = await currentUserRes.json();
-        localStorage.setItem("userName", currentUser.username || currentUser.name);
-        localStorage.setItem("userId", currentUser.id);
-        setUser(currentUser);
+        setUser(currentUser); // Set user context only, don't save to localStorage
+
+        // Redirect based on role
+        setTimeout(() => {
+          if (currentUser.role === "admin") navigate("/admin/dashboard");
+          else navigate("/homepage");
+        }, 800);
+      } else {
+        toast.error("Failed to fetch user profile after login.");
       }
-      setTimeout(() => {
-        if (response.role === "admin") navigate("/admin/dashboard");
-        else navigate("/homepage");
-      }, 800);
     } else {
       setFailCount((prev) => {
-        const newFail = prev + 1;
         if (newFail >= 3) setShowCaptcha(true);
         return newFail;
       });
@@ -94,7 +95,7 @@ const LoginSection = () => {
       if (
         response.error &&
         (response.error.toLowerCase().includes("captcha") ||
-         response.error.toLowerCase().includes("too many"))
+          response.error.toLowerCase().includes("too many"))
       ) {
         setShowCaptcha(true);
         setErrors({

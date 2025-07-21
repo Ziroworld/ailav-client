@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// If you have wishlist, cart, and user hooks—otherwise, leave these out or add your logic.
 import { FaHeart, FaShoppingCart } from "react-icons/fa";
+import { useCart } from "../../../hooks/useCart"; // Adjust path if needed
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
-  // Use product.images or fallback to imageUrl for array/compat
   const images = Array.isArray(product.images) && product.images.length > 0
     ? product.images
     : [product.imageUrl || "https://via.placeholder.com/180?text=No+Image"];
@@ -15,10 +15,9 @@ const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    if (!isHovered) return;
-    if (images.length < 2) return;
+    if (!isHovered || images.length < 2) return;
     const interval = setInterval(() => {
-      setImgIndex((prev) => (prev + 1) % images.length);
+      setImgIndex(prev => (prev + 1) % images.length);
     }, 1100);
     return () => clearInterval(interval);
   }, [isHovered, images.length]);
@@ -38,21 +37,24 @@ const ProductCard = ({ product }) => {
         transition-all duration-300
         hover:scale-[1.024] hover:shadow-[0_8px_36px_0_rgba(0,0,0,0.12)]
       `}
-      onClick={() => navigate(`/product/${product._id}`)}
+      onClick={() => navigate(`/customer/product/${product._id}`)}
       style={{
         minWidth: 210,
         minHeight: 310,
         boxShadow: "0 4px 36px 0 rgba(0,0,0,0.07), 0 1.5px 14px 0 rgba(30,50,60,0.09)"
       }}
     >
-      {/* Wishlist & Cart Buttons (you can wire up your handlers here) */}
+      {/* Wishlist & Cart Buttons */}
       <div className="absolute top-4 right-4 flex flex-col gap-2 z-10">
         <button
           className="
             w-9 h-9 rounded-full bg-white shadow flex items-center justify-center
             border border-gray-200 text-gray-500 hover:text-red-500 hover:bg-gray-50 hover:scale-110 transition-all
           "
-          onClick={e => { e.stopPropagation(); /* handleWishlist(product._id) */ }}
+          onClick={e => {
+            e.stopPropagation();
+            // handleWishlist(product._id);
+          }}
           aria-label="Add to wishlist"
         >
           <FaHeart size={18} />
@@ -62,7 +64,10 @@ const ProductCard = ({ product }) => {
             w-9 h-9 rounded-full bg-white shadow flex items-center justify-center
             border border-gray-200 text-gray-500 hover:text-green-600 hover:bg-gray-50 hover:scale-110 transition-all
           "
-          onClick={e => { e.stopPropagation(); /* handleAddToCart(product, 1) */ }}
+          onClick={e => {
+            e.stopPropagation();
+            addToCart(product, 1); // Add to cart!
+          }}
           aria-label="Add to cart"
         >
           <FaShoppingCart size={18} />
@@ -79,7 +84,7 @@ const ProductCard = ({ product }) => {
         "
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={e => { e.stopPropagation(); setImgIndex((prev) => (prev + 1) % images.length); }}
+        onClick={e => { e.stopPropagation(); setImgIndex(prev => (prev + 1) % images.length); }}
       >
         <img
           src={images[imgIndex]}
@@ -106,7 +111,7 @@ const ProductCard = ({ product }) => {
         "
         onClick={e => {
           e.stopPropagation();
-          navigate(`/product/${product._id}`);
+          navigate(`/customer/product/${product._id}`);
         }}
       >
         View Details
