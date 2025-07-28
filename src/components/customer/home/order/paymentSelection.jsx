@@ -1,130 +1,151 @@
-// paymentSelection.jsx
-import React, { useState, useEffect } from "react";
-import { FaMoneyBill, FaMobileAlt, FaQrcode } from "react-icons/fa";
+import React, { useEffect, useState } from "react";
+import KhaltiCheckout from "khalti-checkout-web";
 import { motion, AnimatePresence } from "framer-motion";
+import { FaMoneyBill, FaMobileAlt, FaCheckCircle, FaSpinner } from "react-icons/fa";
 
-// For Khalti/esewa integration: import their SDK if needed
+const KHALTI_PUBLIC_TEST_KEY = "test_public_key_402c2b0e98364222bb1c1ab02369cefd";
 
-const paymentMethods = [
-  { id: "cash", name: "Cash on Delivery", description: "Pay when you receive your order", icon: <FaMoneyBill className="text-green-700" /> },
-  { id: "qr", name: "QR Payment", description: "Scan a QR code to pay with your mobile wallet", icon: <FaQrcode className="text-blue-700" /> },
-  // Extend with wallet logic if needed
+const paymentOptions = [
+  {
+    id: "cod",
+    label: "Cash on Delivery",
+    icon: <FaMoneyBill className="text-black text-xl" />,
+    color: "border-black bg-white",
+  },
+  {
+    id: "khalti",
+    label: "Khalti Wallet",
+    icon: <FaMobileAlt className="text-[#7757f7] text-xl" />,
+    color: "border-[#7757f7] bg-white",
+  },
 ];
 
-const PaymentSelection = ({
+export default function PaymentSelection({
   totalAmount,
   onPaymentSuccess,
   disabled,
   selectedPayment,
   setSelectedPayment,
-}) => {
-  const [processing, setProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState("");
+}) {
+  const [khaltiCheckout, setKhaltiCheckout] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [status, setStatus] = useState("");
 
-  // For future: useEffect to setup KhaltiCheckout or QR SDK as needed
+  useEffect(() => {
+    setKhaltiCheckout(
+      new KhaltiCheckout({
+        publicKey: KHALTI_PUBLIC_TEST_KEY,
+        productIdentity: "order1234",
+        productName: "Order",
+        productUrl: "http://localhost:5173/",
+        eventHandler: {
+          onSuccess: (payload) => {
+            setStatus("Khalti payment successful!");
+            setPaying(false);
+            setSelectedPayment("khalti");
+            onPaymentSuccess("khalti", payload.token);
+          },
+          onError: () => {
+            setPaying(false);
+            setStatus("Payment failed or cancelled.");
+          },
+          onClose: () => setPaying(false),
+        },
+        paymentPreference: ["KHALTI"],
+      })
+    );
+  }, []);
 
-  // Handles the "Pay"/"Continue" button click, calls the parent with payment result
-  const handlePayment = async () => {
-    setProcessing(true);
-    setPaymentStatus("");
-    try {
-      if (selectedPayment === "cash") {
-        setTimeout(() => {
-          setProcessing(false);
-          setPaymentStatus("success");
-          onPaymentSuccess("cash"); // Pass payment method back
-        }, 800);
-      }
-      else if (selectedPayment === "qr") {
-        // Here, show QR code (or do real wallet integration)
-        // Demo: just wait & succeed
-        setTimeout(() => {
-          setProcessing(false);
-          setPaymentStatus("success");
-          onPaymentSuccess("qr"); // You can pass payment token/id if needed
-        }, 1800);
-      }
-      // You can add logic for Khalti, eSewa, Fonepay, etc. here
-    } catch (err) {
-      setProcessing(false);
-      setPaymentStatus("error");
+  // Select handler
+  const handleSelect = (id) => {
+    if (disabled) return;
+    setSelectedPayment(id);
+    setStatus("");
+    if (id === "cod") {
+      // For COD, mark as paid (simulate success)
+      onPaymentSuccess("cod");
     }
+  };
+
+  // Khalti handler
+  const handleKhaltiPay = () => {
+    setPaying(true);
+    setStatus("");
+    khaltiCheckout.show({ amount: totalAmount * 100 });
   };
 
   return (
     <motion.div
-      className="w-full"
+      className="w-full flex flex-col gap-6"
       initial={{ opacity: 0, y: 22 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex flex-wrap gap-3 mb-3">
-        {paymentMethods.map((method) => (
-          <label
-            key={method.id}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer border shadow text-sm font-semibold
-              ${selectedPayment === method.id ? "bg-black text-white border-black" : "bg-white text-black border-gray-200 opacity-80"}
-            `}
+      <div className="flex gap-4">
+        {paymentOptions.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            className={`flex flex-col items-center border-2 px-6 py-4 rounded-2xl min-w-[140px] transition-all duration-150
+              ${selectedPayment === opt.id
+                ? "shadow-lg border-black bg-black text-white scale-105"
+                : `${opt.color} text-black hover:bg-gray-100`}`}
+            disabled={disabled || paying}
+            onClick={() => handleSelect(opt.id)}
           >
-            <input
-              type="radio"
-              name="paymentMethod"
-              value={method.id}
-              checked={selectedPayment === method.id}
-              onChange={() => setSelectedPayment(method.id)}
-              className="hidden"
-            />
-            {method.icon}
-            <span>
-              <span className="font-bold">{method.name}</span>
-              <span className="block text-xs text-gray-500">{method.description}</span>
-            </span>
-          </label>
+            <span className="mb-2">{opt.icon}</span>
+            <span className="font-semibold">{opt.label}</span>
+            {opt.id === "khalti" && (
+              <span className="text-xs text-[#7757f7] mt-1">Instant Payment</span>
+            )}
+          </button>
         ))}
       </div>
-      <button
-        type="button"
-        className={`w-full mt-2 py-2 rounded-md text-lg font-bold transition
-          ${selectedPayment ? "bg-black text-white hover:bg-gray-900" : "bg-gray-200 text-gray-400 cursor-not-allowed"}
-        `}
-        onClick={handlePayment}
-        disabled={!selectedPayment || processing || disabled}
-      >
-        {processing
-          ? "Processing..."
-          : selectedPayment === "cash"
-          ? "Place Order (Cash on Delivery)"
-          : selectedPayment === "qr"
-          ? "Continue to QR Payment"
-          : "Select Payment"
-        }
-      </button>
 
-      {/* Payment status feedback */}
+      {/* Khalti Pay Button */}
+      {selectedPayment === "khalti" && (
+        <motion.div
+          className="w-full flex flex-col items-center mt-3"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 16 }}
+        >
+          <button
+            onClick={handleKhaltiPay}
+            disabled={paying || disabled}
+            className={`w-full md:w-1/2 py-3 rounded-xl font-bold text-white text-lg mt-2
+              transition-all bg-gradient-to-r from-[#5636d4] to-[#8b53fc] hover:from-[#7757f7] hover:to-[#5636d4]
+              ${paying ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            {paying ? (
+              <span className="flex items-center justify-center gap-2">
+                <FaSpinner className="animate-spin" /> Processing...
+              </span>
+            ) : (
+              <>
+                Pay with Khalti <span className="ml-2">₨{totalAmount.toLocaleString()}</span>
+              </>
+            )}
+          </button>
+        </motion.div>
+      )}
+
+      {/* Status or Success message */}
       <AnimatePresence>
-        {paymentStatus === "success" && (
+        {status && (
           <motion.div
-            className="text-green-700 mt-3 text-sm text-center"
-            initial={{ opacity: 0, y: 8 }}
+            className={`flex items-center justify-center mt-3 text-lg gap-2 ${
+              status.includes("successful") ? "text-green-700" : "text-red-500"
+            }`}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
+            exit={{ opacity: 0, y: 10 }}
           >
-            Payment method selected!
-          </motion.div>
-        )}
-        {paymentStatus === "error" && (
-          <motion.div
-            className="text-red-600 mt-3 text-sm text-center"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-          >
-            Payment failed. Try again.
+            {status.includes("successful") && <FaCheckCircle />}
+            {status}
           </motion.div>
         )}
       </AnimatePresence>
     </motion.div>
   );
-};
-
-export default PaymentSelection;
+}
