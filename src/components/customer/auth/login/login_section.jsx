@@ -20,7 +20,7 @@ const LoginSection = () => {
   const [forgotStep, setForgotStep] = useState("email");
   const [resetEmail, setResetEmail] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
-  const [isHuman, setIsHuman] = useState(false);
+  // REMOVED: const [isHuman, setIsHuman] = useState(false);
   const recaptchaRef = useRef();
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
@@ -37,7 +37,6 @@ const LoginSection = () => {
     if (!credentials.username.trim()) newErrors.username = "Username is required";
     if (!credentials.password) newErrors.password = "Password is required";
     if (!captchaToken) newErrors.captcha = "Please complete the CAPTCHA";
-    if (!isHuman) newErrors.isHuman = "Please check the box to verify you are not a robot";
     if (!SITE_KEY) newErrors.sitekey = "CAPTCHA site key missing. Check your .env file.";
     return newErrors;
   };
@@ -63,7 +62,7 @@ const LoginSection = () => {
     if (response.success) {
       if (recaptchaRef.current) recaptchaRef.current.reset();
       setCaptchaToken("");
-      setIsHuman(false);
+      // REMOVED: setIsHuman(false);
       toast.success("Login successful! Redirecting...");
 
       localStorage.setItem("accessToken", response.accessToken);
@@ -93,7 +92,7 @@ const LoginSection = () => {
       toast.error(response.error || "Login failed.");
       if (recaptchaRef.current) recaptchaRef.current.reset();
       setCaptchaToken("");
-      setIsHuman(false);
+      // REMOVED: setIsHuman(false);
     }
   };
 
@@ -190,33 +189,23 @@ const LoginSection = () => {
                     exit={{ opacity: 0, y: 16 }}
                     className="my-2 flex flex-col items-center">
                     {SITE_KEY ? (
-                      <>
-                        <ReCAPTCHA
-                          sitekey={SITE_KEY}
-                          ref={recaptchaRef}
-                          onChange={handleCaptcha}
-                          onExpired={() => setCaptchaToken("")}
-                        />
-                        <label className="flex items-center gap-2 mt-3 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={isHuman}
-                            onChange={e => setIsHuman(e.target.checked)}
-                          />
-                          I am not a robot
-                        </label>
-                      </>
+                      <ReCAPTCHA
+                        sitekey={SITE_KEY}
+                        ref={recaptchaRef}
+                        onChange={handleCaptcha}
+                        onExpired={() => setCaptchaToken("")}
+                      />
                     ) : (
                       <span className="text-red-500 text-xs mt-2">
                         CAPTCHA site key is missing! Set <b>VITE_RECAPTCHA_SITE_KEY</b> in your .env.
                       </span>
                     )}
-                    {(errors.captcha || errors.isHuman || errors.sitekey) && (
+                    {(errors.captcha || errors.sitekey) && (
                       <motion.span
                         className="text-xs text-red-500 mt-2"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}>
-                        {errors.captcha || errors.isHuman || errors.sitekey}
+                        {errors.captcha || errors.sitekey}
                       </motion.span>
                     )}
                   </motion.div>
@@ -225,7 +214,7 @@ const LoginSection = () => {
                   <button
                     type="submit"
                     className="btn btn-neutral w-full rounded-xl text-lg"
-                    disabled={!captchaToken || !isHuman || !SITE_KEY}>
+                    disabled={!captchaToken || !SITE_KEY}>
                     Login
                   </button>
                   {errors.submit && (
