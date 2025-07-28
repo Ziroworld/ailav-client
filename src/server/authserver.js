@@ -1,7 +1,9 @@
 const API_URL = "https://localhost:8080/api/V3/auth";
 
+// Simple in-memory cache for CSRF (scoped to module)
+let cachedCsrfToken = null;
+
 export class AuthServer {
-  // Registration - stays unchanged
   static async register(userData) {
     try {
       const response = await fetch(`${API_URL}/register`, {
@@ -10,18 +12,14 @@ export class AuthServer {
         body: JSON.stringify(userData),
         credentials: "include",
       });
-
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Registration failed");
-
       return { success: true, data: data.user };
     } catch (error) {
-      console.error("Registration error:", error);
       return { success: false, error: error.message };
     }
   }
 
-  // Login - sets accessToken, never saves refreshToken in JS
   static async login(credentials) {
     try {
       const response = await fetch(`${API_URL}/login`, {
@@ -30,19 +28,18 @@ export class AuthServer {
         body: JSON.stringify(credentials),
         credentials: "include",
       });
-
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Login failed");
-
-      localStorage.setItem("accessToken", data.accessToken); // Use new key name!
+      localStorage.setItem("accessToken", data.accessToken);
+      // Get fresh CSRF token after login
+      cachedCsrfToken = null;
+      await AuthServer.getCsrfToken();
       return { success: true, accessToken: data.accessToken, user: data.user };
     } catch (error) {
-      console.error("Login error:", error.message);
       return { success: false, error: error.message };
     }
   }
 
-  // Fetches user using current accessToken
   static async getCurrentUser() {
     const token = localStorage.getItem("accessToken");
     if (!token) return null;
@@ -54,12 +51,11 @@ export class AuthServer {
       });
       if (!response.ok) return null;
       return await response.json();
-    } catch (e) {
+    } catch {
       return null;
     }
   }
 
-  // Refreshes the access token using the refreshToken (httpOnly cookie)
   static async refreshAccessToken() {
     try {
       const response = await fetch(`${API_URL}/refresh-token`, {
@@ -70,13 +66,35 @@ export class AuthServer {
       if (!response.ok) throw new Error(data.message || "Refresh failed");
       localStorage.setItem("accessToken", data.accessToken);
       return data.accessToken;
-    } catch (e) {
+    } catch {
       localStorage.removeItem("accessToken");
       return null;
     }
   }
 
-  // OTP-related methods stay unchanged (unless you want cookies)
+  // CSRF token fetcher
+  static async getCsrfToken(force = false) {
+    if (cachedCsrfToken && !force) return cachedCsrfToken;
+    try {
+      const response = await fetch(`${API_URL}/csrf-token`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "CSRF fetch failed");
+      cachedCsrfToken = data.csrfToken;
+      return cachedCsrfToken;
+    } catch (e) {
+      cachedCsrfToken = null;
+      return null;
+    }
+  }
+
+  static clearCsrfToken() {
+    cachedCsrfToken = null;
+  }
+
+  // OTP etc. stay unchanged
   static async requestOtp(email) {
     try {
       const response = await fetch(`${API_URL}/request-otp`, {
@@ -89,7 +107,6 @@ export class AuthServer {
       if (!response.ok) throw new Error(data.message || "Request OTP failed");
       return { success: true, message: data.message };
     } catch (error) {
-      console.error("Request OTP error:", error.message);
       return { success: false, error: error.message };
     }
   }
@@ -106,7 +123,6 @@ export class AuthServer {
       if (!response.ok) throw new Error(data.message || "OTP verification failed");
       return { success: true, userId: data.userId, message: data.message };
     } catch (error) {
-      console.error("Verify OTP error:", error.message);
       return { success: false, error: error.message };
     }
   }
@@ -123,42 +139,9 @@ export class AuthServer {
       if (!response.ok) throw new Error(data.message || "Reset password failed");
       return { success: true, message: data.message };
     } catch (error) {
-      console.error("Reset password error:", error.message);
       return { success: false, error: error.message };
     }
   }
 }
 
-// -----------------------------
-// Authenticated fetch helper
-// -----------------------------
-export async function authFetch(url, options = {}) {
-  let token = localStorage.getItem("accessToken");
-  let res = await fetch(url, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      Authorization: `Bearer ${token}`,
-    },
-    credentials: "include",
-  });
-
-  if (res.status === 401) {
-    // Try refresh token if unauthorized
-    token = await AuthServer.refreshAccessToken();
-    if (!token) {
-      // Optionally: redirect to login page here
-      throw new Error("Session expired, please log in again.");
-    }
-    // Retry the original request
-    res = await fetch(url, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-    });
-  }
-  return res;
-}
+export { cachedCsrfToken };

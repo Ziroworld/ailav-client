@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
 import React, { useState, useContext, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthServer } from "../../../../server/authserver.js";
 import { UserContext } from "../../../../context/userContext.jsx";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -10,7 +10,8 @@ import EmailModal from "./EmailModel.jsx";
 import OtpModal from "./OtpModel.jsx";
 import NewPasswordModal from "./NewPasswordModel.jsx";
 
-const RECAPTCHA_SITE_KEY = "6LdVb4grAAAAAASHTnghKZ6WHMA9lMzZa5I8hcWk";
+// Use Vite's import.meta.env for client env vars
+const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const LoginSection = () => {
   const [credentials, setCredentials] = useState({ username: "", password: "" });
@@ -18,9 +19,8 @@ const LoginSection = () => {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotStep, setForgotStep] = useState("email");
   const [resetEmail, setResetEmail] = useState("");
-  const [showCaptcha, setShowCaptcha] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
-  const [failCount, setFailCount] = useState(0);
+  const [isHuman, setIsHuman] = useState(false);
   const recaptchaRef = useRef();
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext);
@@ -36,8 +36,15 @@ const LoginSection = () => {
     const newErrors = {};
     if (!credentials.username.trim()) newErrors.username = "Username is required";
     if (!credentials.password) newErrors.password = "Password is required";
-    if (showCaptcha && !captchaToken) newErrors.captcha = "Please complete the CAPTCHA";
+    if (!captchaToken) newErrors.captcha = "Please complete the CAPTCHA";
+    if (!isHuman) newErrors.isHuman = "Please check the box to verify you are not a robot";
+    if (!SITE_KEY) newErrors.sitekey = "CAPTCHA site key missing. Check your .env file.";
     return newErrors;
+  };
+
+  const handleCaptcha = (token) => {
+    setCaptchaToken(token);
+    setErrors(prev => ({ ...prev, submit: '' }));
   };
 
   // --- Login Submit Handler ---
@@ -46,27 +53,23 @@ const LoginSection = () => {
     const newErrors = validateForm();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      if (Object.keys(newErrors).includes("captcha")) {
-        toast.error("Please complete the CAPTCHA.");
-      }
+      toast.error("Please fix the highlighted errors.");
       return;
     }
 
-    const payload = showCaptcha ? { ...credentials, recaptchaToken: captchaToken } : credentials;
+    const payload = { ...credentials, recaptchaToken: captchaToken };
     const response = await AuthServer.login(payload);
 
     if (response.success) {
-      setFailCount(0);
-      setShowCaptcha(false);
-      setCaptchaToken("");
       if (recaptchaRef.current) recaptchaRef.current.reset();
+      setCaptchaToken("");
+      setIsHuman(false);
       toast.success("Login successful! Redirecting...");
 
-      // Only store accessToken in localStorage
       localStorage.setItem("accessToken", response.accessToken);
 
-      // Fetch the current user with the new accessToken
-      const currentUserRes = await fetch("http://localhost:8080/api/V3/auth/currentuser", {
+      // Fetch user details
+      const currentUserRes = await fetch("https://localhost:8080/api/V3/auth/currentuser", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${response.accessToken}`,
@@ -76,9 +79,8 @@ const LoginSection = () => {
 
       if (currentUserRes.ok) {
         const currentUser = await currentUserRes.json();
-        setUser(currentUser); // Set user context only, don't save to localStorage
+        setUser(currentUser);
 
-        // Redirect based on role
         setTimeout(() => {
           if (currentUser.role === "admin") navigate("/admin/dashboard");
           else navigate("/homepage");
@@ -87,28 +89,11 @@ const LoginSection = () => {
         toast.error("Failed to fetch user profile after login.");
       }
     } else {
-      setFailCount((prev) => {
-        if (newFail >= 3) setShowCaptcha(true);
-        return newFail;
-      });
-
-      if (
-        response.error &&
-        (response.error.toLowerCase().includes("captcha") ||
-          response.error.toLowerCase().includes("too many"))
-      ) {
-        setShowCaptcha(true);
-        setErrors({
-          submit: "Too many attempts. Please solve the CAPTCHA and retry.",
-          captcha: "Please complete the CAPTCHA.",
-        });
-        toast.warning("Too many attempts. Please solve the CAPTCHA.");
-      } else {
-        setErrors({ submit: response.error });
-        toast.error(response.error || "Login failed.");
-      }
+      setErrors({ submit: response.error });
+      toast.error(response.error || "Login failed.");
       if (recaptchaRef.current) recaptchaRef.current.reset();
       setCaptchaToken("");
+      setIsHuman(false);
     }
   };
 
@@ -198,35 +183,49 @@ const LoginSection = () => {
                   </div>
                 </motion.div>
                 <AnimatePresence>
-                  {showCaptcha && (
-                    <motion.div
-                      key="captcha"
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 16 }}
-                      className="my-2 flex flex-col items-center">
-                      <ReCAPTCHA
-                        sitekey={RECAPTCHA_SITE_KEY}
-                        ref={recaptchaRef}
-                        onChange={token => setCaptchaToken(token)}
-                        onExpired={() => setCaptchaToken("")}
-                      />
-                      {errors.captcha && (
-                        <motion.span
-                          className="text-xs text-red-500 mt-2"
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}>
-                          {errors.captcha}
-                        </motion.span>
-                      )}
-                    </motion.div>
-                  )}
+                  <motion.div
+                    key="captcha"
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    className="my-2 flex flex-col items-center">
+                    {SITE_KEY ? (
+                      <>
+                        <ReCAPTCHA
+                          sitekey={SITE_KEY}
+                          ref={recaptchaRef}
+                          onChange={handleCaptcha}
+                          onExpired={() => setCaptchaToken("")}
+                        />
+                        <label className="flex items-center gap-2 mt-3 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={isHuman}
+                            onChange={e => setIsHuman(e.target.checked)}
+                          />
+                          I am not a robot
+                        </label>
+                      </>
+                    ) : (
+                      <span className="text-red-500 text-xs mt-2">
+                        CAPTCHA site key is missing! Set <b>VITE_RECAPTCHA_SITE_KEY</b> in your .env.
+                      </span>
+                    )}
+                    {(errors.captcha || errors.isHuman || errors.sitekey) && (
+                      <motion.span
+                        className="text-xs text-red-500 mt-2"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}>
+                        {errors.captcha || errors.isHuman || errors.sitekey}
+                      </motion.span>
+                    )}
+                  </motion.div>
                 </AnimatePresence>
                 <motion.div className="pt-3" variants={inputVariants} initial="initial" animate="animate" custom={3}>
                   <button
                     type="submit"
                     className="btn btn-neutral w-full rounded-xl text-lg"
-                    disabled={showCaptcha && !captchaToken}>
+                    disabled={!captchaToken || !isHuman || !SITE_KEY}>
                     Login
                   </button>
                   {errors.submit && (

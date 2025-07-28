@@ -1,14 +1,13 @@
-// src/context/UserContext.jsx
 import React, { createContext, useState, useEffect } from "react";
-import { authFetch } from "../server/authserver"; // no need to import AuthServer if not using backend logout
+import { authFetch } from "../server/authFetch";
+import { AuthServer } from "../server/authserver";
 
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null);  // { id, role, name, ... }
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Try to load user info from backend using token on startup
   useEffect(() => {
     const loadUser = async () => {
       const token = localStorage.getItem("accessToken");
@@ -39,10 +38,11 @@ export const UserProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  // --- LOGOUT: just clear token & user context, no backend call needed ---
+  // LOGOUT: clear everything
   const logout = () => {
     localStorage.removeItem("accessToken");
     setUser(null);
+    AuthServer.clearCsrfToken();
   };
 
   return (

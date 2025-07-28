@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getUsers } from '../server/admin-api'; // Adjust the path as needed
+import { useState, useEffect } from "react";
+import { authFetch } from "../server/authFetch";
 
 const useUsers = () => {
   const [users, setUsers] = useState([]);
@@ -8,16 +8,15 @@ const useUsers = () => {
 
   useEffect(() => {
     setLoading(true);
-    getUsers()
-      .then((data) => {
-        console.log("Fetched data:", data);
-        // Ensure the returned data is an array.
-        const userArray = Array.isArray(data) ? data : [];
-        setUsers(userArray);
+    authFetch("https://localhost:8080/api/V3/users")
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Failed to fetch users");
+        const data = await response.json();
+        setUsers(Array.isArray(data) ? data : []);
         setLoading(false);
       })
       .catch((err) => {
-        setError(err);
+        setError(err.message);
         setLoading(false);
       });
   }, []);

@@ -1,121 +1,88 @@
-import axios from 'axios';
+// src/server/customer-api.jsx
+import { authFetch } from './authFetch';
 
 
-//---------------API FOR USER--------------------//
-
+// USER
 const USER_API_BASE_URL = 'https://localhost:8080/api/V3/users';
-
-
 export const updateUser = async (id, data) => {
-  const response = await fetch(`${USER_API_BASE_URL}/${id}`, {
-    method: 'PUT', // or PATCH if your backend expects that
-    headers: {
-      'Content-Type': 'application/json'
-    },
+  const response = await authFetch(`${USER_API_BASE_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to update user');
-  }
-  
+  if (!response.ok) throw new Error(await response.text());
   return await response.json();
 };
 
-//--------------------CART API --------------------//
+// CART
 const CART_API_BASE_URL = 'https://localhost:8080/api/V3/cart';
-
 export const addToCartApi = async (userId, productId, quantity) => {
-  try {
-    const response = await axios.post(`${CART_API_BASE_URL}/add`, { userId, productId, quantity });
-    return response.data.cart;
-  } catch (error) {
-    console.error("Error in addToCartApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${CART_API_BASE_URL}/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, productId, quantity }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const getCartApi = async (userId) => {
-  try {
-    const response = await axios.get(`${CART_API_BASE_URL}/${userId}`);
-    return response.data.cart;
-  } catch (error) {
-    console.error("Error in getCartApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${CART_API_BASE_URL}/${userId}`);
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const removeFromCartApi = async (userId, productId) => {
-  try {
-    const response = await axios.post(`${CART_API_BASE_URL}/remove`, { userId, productId });
-    return response.data.cart;
-  } catch (error) {
-    console.error("Error in removeFromCartApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${CART_API_BASE_URL}/remove`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, productId }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const clearCartApi = async (userId) => {
-  try {
-    const response = await axios.post(`${CART_API_BASE_URL}/clear`, { userId });
-    return response.data.cart;
-  } catch (error) {
-    console.error("Error in clearCartApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${CART_API_BASE_URL}/clear`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
 
-//--------------------ORDER API --------------------//
-
+// ORDER
 const ORDER_API_BASE_URL = 'https://localhost:8080/api/V3/order';
-
 export const createOrderApi = async (orderData) => {
-  try {
-    const response = await axios.post(`${ORDER_API_BASE_URL}/create`, orderData);
-    return response.data.order;
-  } catch (error) {
-    console.error("Error in createOrderApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${ORDER_API_BASE_URL}/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(orderData),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const getAllOrdersApi = async () => {
-  try {
-    const response = await axios.get(`${ORDER_API_BASE_URL}/`);
-    return response.data.orders;
-  } catch (error) {
-    console.error("Error in getAllOrdersApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${ORDER_API_BASE_URL}/`);
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const getUserOrdersApi = async (userId) => {
-  try {
-    const response = await axios.get(`${ORDER_API_BASE_URL}/user/${userId}`);
-    return response.data.orders;
-  } catch (error) {
-    console.error("Error in getUserOrdersApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${ORDER_API_BASE_URL}/user/${userId}`);
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const updateOrderStatusApi = async (orderId, status) => {
-  try {
-    const response = await axios.put(`${ORDER_API_BASE_URL}/update/${orderId}`, { status });
-    return response.data.order;
-  } catch (error) {
-    console.error("Error in updateOrderStatusApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${ORDER_API_BASE_URL}/update/${orderId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };
-
 export const deleteOrderApi = async (orderId) => {
-  try {
-    const response = await axios.delete(`${ORDER_API_BASE_URL}/delete/${orderId}`);
-    return response.data.message;
-  } catch (error) {
-    console.error("Error in deleteOrderApi:", error);
-    throw error;
-  }
+  const response = await authFetch(`${ORDER_API_BASE_URL}/delete/${orderId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) throw new Error(await response.text());
+  return await response.json();
 };

@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthServer } from '../../../../server/authserver.js';
 import { motion } from 'framer-motion';
 import zxcvbn from 'zxcvbn';
 import { Toaster, toast } from 'sonner';
+import ReCAPTCHA from 'react-google-recaptcha';
+
+// Use Vite's import.meta.env for client env vars
+const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const PASSWORD_RULES = [
   { regex: /.{8,32}/, message: '8-32 characters' },
@@ -33,6 +37,9 @@ const RegisterSection = () => {
   const [passwordFeedback, setPasswordFeedback] = useState('');
   const [rulesMet, setRulesMet] = useState({});
   const [wasSubmitted, setWasSubmitted] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = useRef();
   const navigate = useNavigate();
 
   const isPasswordReused = (pwd) =>
@@ -57,7 +64,6 @@ const RegisterSection = () => {
       }
       setRulesMet(newRules);
     }
-    // Remove error as user edits
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -100,16 +106,32 @@ const RegisterSection = () => {
     return newErrors;
   };
 
+  const handleCaptcha = (token) => {
+    setCaptchaToken(token);
+    setErrors(prev => ({ ...prev, submit: '' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setWasSubmitted(true);
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
-      const response = await AuthServer.register(formData);
+      const { confirmPassword, ...payload } = formData;
+      // Only add captcha if it's required
+      if (showCaptcha && captchaToken) {
+        payload.captcha = captchaToken;
+      }
+      const response = await AuthServer.register(payload);
+
       if (response.success) {
         localStorage.setItem("authToken", response.token);
         toast.success("Registration successful! Redirecting...");
         setTimeout(() => navigate("/homepage"), 1600);
+      } else if (response.error && response.error.toLowerCase().includes('captcha')) {
+        // Show captcha if backend asks for it
+        setShowCaptcha(true);
+        setErrors({ submit: "Please solve the CAPTCHA to continue." });
+        toast.error("Too many attempts! Please solve the CAPTCHA.");
       } else {
         setErrors({ submit: response.error });
         toast.error(response.error || "Registration failed");
@@ -311,12 +333,28 @@ const RegisterSection = () => {
                 />
                 {((errors.confirmPassword && (wasSubmitted || formData.confirmPassword === ""))) && <span className="text-red-500 text-sm mt-1">{errors.confirmPassword}</span>}
               </div>
+
+              {/* CAPTCHA section */}
+              {showCaptcha && (
+                <div className="flex flex-col items-center">
+                  <label className="block font-bold mb-1 text-black">Complete the CAPTCHA</label>
+                  <ReCAPTCHA
+                    ref={captchaRef}
+                    sitekey={SITE_KEY}
+                    onChange={handleCaptcha}
+                    className="my-2"
+                  />
+                  {!captchaToken && <span className="text-red-500 text-xs mt-1">CAPTCHA is required.</span>}
+                </div>
+              )}
+
               {/* Submit Button */}
               <div>
                 <motion.button
                   whileTap={{ scale: 0.97 }}
                   type="submit"
                   className="w-full py-3 mt-2 bg-black text-white text-lg rounded-lg font-bold shadow-sm hover:bg-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-black"
+                  disabled={showCaptcha && !captchaToken}
                 >
                   Register
                 </motion.button>
