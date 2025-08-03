@@ -39,6 +39,7 @@ export const getCategories = async () => {
 
 //--------------------API FOR PRODUCT DASHBOARD-------------------//
 const PRODUCT_API_BASE_URL = 'https://localhost:8080/api/V3/product';
+// const PRODUCT_API_BASE_URL = '/api/V3/product/findAll';
 
 export const createProduct = async (payload) => {
   const response = await authFetch(`${PRODUCT_API_BASE_URL}/save`, {
